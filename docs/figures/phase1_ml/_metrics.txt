@@ -1,0 +1,22 @@
+LogisticRegression	Acc=0.410	F1=0.370
+RandomForest	Acc=0.801	F1=0.770
+XGBoost	Acc=0.797	F1=0.776
+BEST	XGBoost
+StratifiedKFold_F1	0.770+-0.008
+GroupKFold_F1	0.413+-0.027
+
+classification_report(best):
+              precision    recall  f1-score   support
+
+          가지       0.92      0.62      0.74       143
+          국화       0.81      0.54      0.65       168
+          딸기       0.82      0.83      0.83      1217
+       방울토마토       0.77      0.67      0.72       963
+          오이       0.82      0.73      0.77       539
+       완숙토마토       0.74      0.79      0.77      1584
+          참외       0.90      0.91      0.91       830
+        파프리카       0.78      0.87      0.82      1212
+
+    accuracy                           0.80      6656
+   macro avg       0.82      0.75      0.78      6656
+weighted avg       0.80      0.80      0.80      6656

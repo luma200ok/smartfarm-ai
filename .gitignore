@@ -1,0 +1,37 @@
+# Python venv
+.venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# 데이터 (용량 큼 · 원본은 Kaggle/포털에서 재다운 가능)
+data/*.csv
+data/**/*.csv
+data/**/*.hwpx
+data/**/*.xlsx
+data/*.xlsx
+data/*.zip
+data/images/
+!data/.gitkeep
+
+# docs (로컬 전용 — 커밋 제외)
+docs/_local/
+
+# 모델 저장 파일 (Phase 2~)
+*.h5
+*.pt
+*.pkl
+*.joblib
+# 단, Phase 1 데모 모델은 배포 앱이 런타임에 불러야 해서 예외(6.9MB)
+!models/phase1_crop_rf.pkl
+
+# OS
+.DS_Store
+
+# 환경변수 (Phase 3 API 키)
+.env
+
+# 브라우저 자동화(Playwright MCP) 잔여물
+.playwright-mcp/

@@ -1,0 +1,23 @@
+# Phase 1 — ML (정형 데이터 분석/분류)
+pandas
+numpy
+scikit-learn==1.7.2   # .pkl 모델 저장 버전 고정 (배포 시 로딩 호환)
+xgboost
+matplotlib
+seaborn
+ipykernel
+
+# 자동 EDA 리포트 (src/ml/profile_report.py)
+ydata-profiling
+setuptools<81          # ydata-profiling 4.18.x가 pkg_resources 사용 (setuptools 81+에서 제거됨)
+
+# Streamlit 데모 (전 단계 배포)
+streamlit
+
+# --- Phase 2 — DL (Apple Silicon: MPS 가속 자동 지원) ---
+torch
+torchvision
+
+# --- Phase 3 — LLM (새 세션에서 주석 해제) ---
+# anthropic
+# python-dotenv
