@@ -5,11 +5,12 @@ Phase 1 (ML) — EDA 그림 생성 스크립트
 docs/figures/phase1_ml/ 에 PNG 4장 저장.
 """
 import os
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-ROOT = "/Users/jeongjaebong/IntelliJ/mycode/toy_project/solo/smartfarm_ai"
+ROOT = str(Path(__file__).resolve().parents[2])
 DATA = f"{ROOT}/data/processed/env_daily.csv"
 FIGS = f"{ROOT}/docs/figures/phase1_ml"
 os.makedirs(FIGS, exist_ok=True)

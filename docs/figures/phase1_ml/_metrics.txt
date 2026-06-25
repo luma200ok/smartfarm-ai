@@ -1,11 +1,15 @@
+test-set (낙관적·상대 비교)
 LogisticRegression	Acc=0.410	F1=0.370
 RandomForest	Acc=0.801	F1=0.770
 XGBoost	Acc=0.797	F1=0.776
-BEST	XGBoost
-StratifiedKFold_F1	0.770+-0.008
-GroupKFold_F1	0.413+-0.027
 
-classification_report(best):
+cross-val F1(macro)
+LogisticRegression	SKF=0.371±0.003	GKF=0.326±0.046
+RandomForest	SKF=0.770±0.008	GKF=0.413±0.027
+XGBoost	SKF=0.777±0.006	GKF=0.415±0.028
+BEST(GroupKFold)	XGBoost
+
+classification_report(test, best):
               precision    recall  f1-score   support
 
           가지       0.92      0.62      0.74       143
