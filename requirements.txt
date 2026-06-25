@@ -11,8 +11,12 @@ ipykernel
 ydata-profiling
 setuptools<81          # ydata-profiling 4.18.x가 pkg_resources 사용 (setuptools 81+에서 제거됨)
 
-# Streamlit 데모 (전 단계 배포)
+# Streamlit 데모
 streamlit
+
+# 노트북 빌드·실행 (src/ml/build_notebook.py)
+nbformat
+jupyter
 
 # --- Phase 2 — DL (Apple Silicon: MPS 가속 자동 지원) ---
 torch
