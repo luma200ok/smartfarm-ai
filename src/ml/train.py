@@ -21,7 +21,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
 from xgboost import XGBClassifier
 
-ROOT = "/Users/jeongjaebong/IntelliJ/mycode/toy_project/solo/smartfarm-ai"
+ROOT = "/Users/jeongjaebong/IntelliJ/mycode/toy_project/solo/smartfarm_ai"
 DATA = f"{ROOT}/data/processed/env_daily.csv"
 MODELS = f"{ROOT}/models"
 FIGS = f"{ROOT}/docs/figures/phase1_ml"

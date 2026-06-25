@@ -41,7 +41,7 @@
 
 ### Phase 2 — DL (비전 + 시계열) · ⭐⭐⭐⭐ ← 차별화 핵심 ▶ 다음
 **2-a 비전 (CNN) — ⭐ ML로 불가능한 새 능력 / 토마토 시작**
-- ⬜ 2-1 신경망 기초 + PyTorch(MPS) 첫걸음
+- ✅ 2-1 신경망 기초(뉴런·활성화) — `src/dl/01_nn_basic.py`, "활성화 없으면 직선" 실증
 - ⬜ 2-2 학습 메커니즘 (손실·역전파·Adam)
 - ⬜ 2-3 Dataset/DataLoader · 학습 루프 골격
 - ⬜ 2-4 CNN 기초 (Conv·Pooling)
@@ -88,7 +88,7 @@
 
 ## ✅ 결정됨 (→ [decisions.md](decisions.md))
 - **작물:** 토마토 단일 시작 → 딸기·오이·참외 확장 (ML∩DL 교집합) · ADR-002
-- **Phase 1 데이터:** 농진청 스마트팜 현장 농가 데이터 (옛 노지 Kaggle은 [ml-learn](https://github.com/luma200ok/smartfarm-ml-learn) v1로 분리) · ADR-001
+- **Phase 1 데이터:** 농진청 스마트팜 현장 농가 데이터 (옛 노지 Kaggle은 [ml-learn](https://github.com/luma200ok/smartfarm_ml_learn) v1로 분리) · ADR-001
 - **Phase 2 병진단:** PlantVillage(즉시) → AI Hub 153(국내) · ADR-005
 - **DL 프레임워크:** PyTorch (MPS) · **알림:** 텔레그램
 

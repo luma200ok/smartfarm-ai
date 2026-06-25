@@ -9,14 +9,14 @@
 | 과제 | 환경(온·습도·CO2·일사 등) → 작물 8종 분류 |
 | 데이터 | 농진청 스마트팜 현장 농가 데이터(2022) — 833만 시간별 → 33,278 일별 |
 | 베스트 모델 | XGBoost (test F1 0.78) |
-| 코드 | https://github.com/luma200ok/smartfarm-ai |
+| 코드 | https://github.com/luma200ok/smartfarm_ai |
 | 핵심 교훈 | **데이터 누수** — 평가 방법에 따라 F1 0.77 vs 0.41 |
 
 ---
 
 ## 1. 사업과제
 - AI 기반 **스마트팜 작물 분류 모델** 개발 및 시각화.
-- 국내 시설재배(양액·온실) 환경 데이터를 사용해, 노지 입문(이전 레포 [smartfarm-ml-learn](https://github.com/luma200ok/smartfarm-ml-learn))에서 **스마트팜 특화**로 발전한 1단계. (→ [ADR-001](decisions.md))
+- 국내 시설재배(양액·온실) 환경 데이터를 사용해, 노지 입문(이전 레포 [smartfarm_ml_learn](https://github.com/luma200ok/smartfarm_ml_learn))에서 **스마트팜 특화**로 발전한 1단계. (→ [ADR-001](decisions.md))
 
 ## 2. 개요 및 현황
 ### 2.1 추진배경 및 목적

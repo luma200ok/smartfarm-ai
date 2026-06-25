@@ -95,7 +95,7 @@
 
 ### Phase 1 — ML (정형 센서 → 작물·환경 판단)
 - **데이터:** 농촌진흥청 스마트팜 현장 농가 데이터(공공데이터포털) — 시설 환경·생육·생산(8작물)
-  - 옛 노지 Kaggle Crop Recommendation은 입문 v1로 분리 → [smartfarm-ml-learn](https://github.com/luma200ok/smartfarm-ml-learn) (→ ADR-001)
+  - 옛 노지 Kaggle Crop Recommendation은 입문 v1로 분리 → [smartfarm_ml_learn](https://github.com/luma200ok/smartfarm_ml_learn) (→ ADR-001)
 - **입력:** 일별 환경 통계(내부 온·습도·CO2·일사·온도통계) → **정답:** 작물 8종 분류
 - **모델:** LogisticRegression → RandomForest → XGBoost (베스트, test F1 0.78)
 - **기술:** scikit-learn, pandas, xgboost

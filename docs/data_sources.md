@@ -18,7 +18,7 @@
 | **라이선스** | 공공데이터(이용허락범위 확인) · 학습/포트폴리오용 |
 | **확장 후보** | 다년치(2020~2024) 결합 · AI Hub 지능형 스마트팜 통합데이터(토마토 534) 환경 시계열 |
 
-> 📌 옛 노지 데이터(Kaggle Crop Recommendation)는 **입문 단계(v1)** 로 분리 → [smartfarm-ml-learn](https://github.com/luma200ok/smartfarm-ml-learn). (→ [ADR-001](decisions.md))
+> 📌 옛 노지 데이터(Kaggle Crop Recommendation)는 **입문 단계(v1)** 로 분리 → [smartfarm_ml_learn](https://github.com/luma200ok/smartfarm_ml_learn). (→ [ADR-001](decisions.md))
 
 ---
 
