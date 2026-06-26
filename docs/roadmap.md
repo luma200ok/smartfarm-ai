@@ -48,20 +48,20 @@
 - ✅ 2-2 학습 메커니즘(손실·역전파·Adam) — `src/dl/02_train_loop.py`
 - ▶ 2-3 Dataset/DataLoader · 학습 루프 골격 — `src/dl/03_dataloader.py`
 
-**STEP 2 · 핵심 — 모델 구축 ⭐ (비전 + 시계열)**
-- ⬜ 2-4 CNN 기초 (Conv·Pooling)
-- ⬜ 2-5 전이학습 — **여러 백본 비교**(ResNet/EfficientNet), 토마토 잎 진단 ⭐
-- ⬜ 2-6 **Grad-CAM** (설명가능 AI — 어느 병반을 보고 판단했나) ⭐
-- ⬜ 2-8 LSTM — 환경 시계열 추세(+이상탐지)
+**STEP 2 · 핵심 — 모델 구축 ⭐ (비전 + 시계열)** — `02_core.py`
+- ✅ 2-4 CNN 기초 (Conv·Pooling) — FashionMNIST acc 0.87
+- ✅ 2-5 전이학습 — **여러 백본 비교**(resnet18 0.94 vs mobilenet_v2 0.95), 토마토 잎 진단 ⭐
+- ✅ 2-6 **Grad-CAM** (설명가능 AI — 어느 병반을 보고 판단했나) ⭐
+- ✅ 2-8 LSTM — 환경 시계열 (내부온도 예측 MAE 1.2℃)
 
-**STEP 3 · 평가 — 강건화·검증**
-- ⬜ 2-7 과적합·불균형·학습안정 (Dropout·클래스가중치·LR스케줄러)
-- ⬜ 2-9 평가 심화 (혼동행렬·ROC/AUC·오분류 FN 분석)
+**STEP 3 · 평가 — 강건화·검증** — `03_eval.py`
+- ✅ 2-7 과적합·불균형·학습안정 (클래스가중치 → 질병 recall 0.10→0.82)
+- ✅ 2-9 평가 심화 (혼동행렬·ROC/AUC 0.97·오분류 FN 분석)
 
-**STEP 4 · 데모 — 배포·마무리**
-- ⬜ 2-10 모델 저장(.pt) + Streamlit (사진 업로드 → 진단 + Grad-CAM)
+**STEP 4 · 데모 — 배포·마무리** — `04_demo.py` · `app/phase2_dl.py`
+- ✅ 2-10 모델 저장(.pt) + Streamlit (사진 업로드 → 진단 + Grad-CAM)
 - ⬜ 2-11 (고급/선택) YOLO 병반 위치 검출
-- ⬜ 2-12 회고·참고문헌 → `phase2_dl.md`
+- ✅ 2-12 회고 (코드 회고 완료 · 정식 `phase2_dl.md` 작성은 예정)
 - 🏁 **Phase 2 끝 = 사진 올리면 진단+히트맵, 작물 1개씩 확장 가능한 파이프라인**
 
 > 청크 상세 = `_local/concepts/DL_devlog.md` · 이론 = `DL.md`.
