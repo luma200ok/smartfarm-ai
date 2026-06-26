@@ -249,11 +249,15 @@ def run_chunk_2_6():
     model.load_state_dict(torch.load(ckpt, map_location=device))
     model.eval().to(device)
 
-    # 마지막 conv 블록에 hook 을 걸어 활성화·기울기를 가로챈다
+    # 마지막 conv 블록에 forward hook 으로 활성화를 저장하고 그 텐서의 grad 를 보존(retain_grad).
+    # ※ backbone 이 freeze(requires_grad=False)라 입력에 requires_grad 를 켜야 grad 가 layer4 까지 흐른다.
     target_layer = model.layer4[-1]
     store = {}
-    target_layer.register_forward_hook(lambda m, i, o: store.update(act=o.detach()))
-    target_layer.register_full_backward_hook(lambda m, gi, go: store.update(grad=go[0].detach()))
+
+    def _save_act(m, i, o):
+        o.retain_grad()
+        store["act"] = o
+    target_layer.register_forward_hook(_save_act)
 
     # val 첫 이미지 1장으로 시연
     tf = transforms.Compose([
@@ -261,15 +265,15 @@ def run_chunk_2_6():
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
     val_ds = datasets.ImageFolder(f"{TOMATO}/val", tf)
     x, y = val_ds[0]
-    xb = x.unsqueeze(0).to(device)
+    xb = x.unsqueeze(0).to(device).requires_grad_(True)   # grad 가 layer4 까지 흐르도록
 
     logits = model(xb)                       # forward (hook 이 act 저장)
     cls = logits.argmax(1).item()
     model.zero_grad()
-    logits[0, cls].backward()                # 예측 클래스 점수로 역전파 (hook 이 grad 저장)
+    logits[0, cls].backward()                # 예측 클래스 점수로 역전파
 
-    act = store["act"][0]                     # (C,h,w)
-    grad = store["grad"][0]                   # (C,h,w)
+    act = store["act"].detach()[0]            # (C,h,w)
+    grad = store["act"].grad[0]               # retain_grad 로 보존된 dL/d(act)
     weights = grad.mean(dim=(1, 2))           # 채널별 중요도 = 기울기 공간평균
     cam = torch.relu((weights[:, None, None] * act).sum(0))   # 가중합 후 ReLU
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 0~1 정규화
