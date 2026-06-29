@@ -26,9 +26,11 @@ device = "mps" if torch.backends.mps.is_available() else "cpu"
 CLASSES = ["leaf_mold", "normal", "tylcv"]       # ImageFolder 알파벳순(학습과 동일)
 LABEL_KR = {"leaf_mold": "🦠 잎곰팡이병", "normal": "🌿 정상",
             "tylcv": "🦠 황화잎말이바이러스"}
-# OOD 가드: 닫힌 분류기라 토마토 잎이 아닌 이미지도 한 클래스로 찍음.
-# 최상위 확률이 이 값 미만이면 "잎 사진이 아닐 수 있음"으로 안내(완벽한 차단 아님 — 과신 OOD는 못 거름).
+# OOD 가드(2단 방어): 닫힌 분류기라 토마토 잎이 아닌 이미지도 한 클래스로 찍음.
+#  1차 — YOLO 검출 게이트: 진단 전에 잎이 1개라도 잡히는지 확인(GATE_CONF). 0개면 진단 차단.
+#  2차 — 신뢰도 컷: 게이트 통과해도 최상위 확률이 이 값 미만이면 "잎 아닐 수 있음" 경고(과신 OOD 보완).
 CONF_THRESHOLD = 0.70
+GATE_CONF = 0.25                                  # YOLO 게이트 판정용 신뢰도(이 이상 박스 1개면 통과)
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
@@ -103,6 +105,12 @@ def detect(yolo, pil, conf=0.25):
     return annotated, dets
 
 
+def leaf_detected(yolo, pil, conf=GATE_CONF):
+    """OOD 게이트: 토마토잎 YOLO로 잎이 1개라도 잡히면 True(잎 사진으로 간주)."""
+    res = yolo.predict(pil.convert("RGB"), device=device, conf=conf, verbose=False)[0]
+    return len(res.boxes) > 0
+
+
 # ── 페이지 렌더 (멀티페이지 엔트리가 호출) ───────────────────────────────────
 def render():
     st.title("🍅 토마토 잎 병해 — 진단(Grad-CAM) · 위치 검출(YOLO)")
@@ -118,33 +126,45 @@ def render():
                      "2) `python src/dl/02_core.py --chunk 2-5`")
         else:
             model = load_model()
-            st.caption("ℹ️ 이 모델은 **토마토 잎 사진 전용**입니다. 잎이 아닌 이미지는 의미 없는 결과가 나올 수 있습니다.")
+            gate_on = YOLO_CKPT.exists()          # 잎 검출기 있으면 OOD 게이트 가동
+            st.caption("ℹ️ 이 모델은 **토마토 잎 사진 전용**입니다. "
+                       + ("업로드 시 **잎 검출(YOLO) → 신뢰도 컷** 2단으로 잎이 아닌 이미지를 거릅니다."
+                          if gate_on else "잎이 아닌 이미지는 의미 없는 결과가 나올 수 있습니다."))
             up = st.file_uploader("토마토 잎 사진 업로드", type=["jpg", "jpeg", "png"], key="diag")
             if up:
                 pil = Image.open(up)
-                label, prob, probs, cam, img = predict_with_cam(model, pil)
 
-                if prob < CONF_THRESHOLD:
-                    # 신뢰도 낮음 → OOD(잎 아님) 의심. 진단은 참고용으로만 노출.
-                    st.warning(
-                        f"⚠️ 신뢰도가 낮습니다(최고 {prob:.1%} < {CONF_THRESHOLD:.0%}). "
-                        "**토마토 잎 사진이 맞는지 확인하세요.** 잎이 아닌 이미지일 가능성이 큽니다.\n\n"
-                        f"(참고용 추정: {LABEL_KR[label]})"
+                # 1차 방어(OOD 게이트): 잎이 검출되지 않으면 진단 자체를 차단
+                if gate_on and not leaf_detected(load_yolo(), pil):
+                    st.error(
+                        "🚫 **토마토 잎이 검출되지 않았습니다.** 진단을 진행하지 않습니다.\n\n"
+                        "이 진단기는 토마토 잎 전용이라 잎이 아닌 이미지는 다루지 않습니다. "
+                        "잎이 화면에 크게 보이도록 다시 촬영해 업로드하세요."
                     )
                 else:
-                    st.subheader(f"진단: {LABEL_KR[label]}  (확률 {prob:.1%})")
-                    if label != "normal":
-                        st.warning(f"{LABEL_KR[label]}이(가) 의심됩니다. 오른쪽 히트맵의 붉은 영역(병반 추정)을 확인하세요.")
+                    label, prob, probs, cam, img = predict_with_cam(model, pil)
+
+                    if prob < CONF_THRESHOLD:
+                        # 2차 방어(신뢰도 컷): 게이트는 통과했으나 과신 OOD 의심. 진단은 참고용으로만 노출.
+                        st.warning(
+                            f"⚠️ 신뢰도가 낮습니다(최고 {prob:.1%} < {CONF_THRESHOLD:.0%}). "
+                            "**토마토 잎 사진이 맞는지 확인하세요.** 잎이 아닌 이미지일 가능성이 큽니다.\n\n"
+                            f"(참고용 추정: {LABEL_KR[label]})"
+                        )
                     else:
-                        st.success("정상으로 판단됩니다.")
+                        st.subheader(f"진단: {LABEL_KR[label]}  (확률 {prob:.1%})")
+                        if label != "normal":
+                            st.warning(f"{LABEL_KR[label]}이(가) 의심됩니다. 오른쪽 히트맵의 붉은 영역(병반 추정)을 확인하세요.")
+                        else:
+                            st.success("정상으로 판단됩니다.")
 
-                c1, c2 = st.columns(2)
-                c1.image(img, caption="입력(224×224)", use_container_width=True)
-                c2.image(overlay(img, cam), caption="Grad-CAM — 판단 근거 영역", use_container_width=True)
+                    c1, c2 = st.columns(2)
+                    c1.image(img, caption="입력(224×224)", use_container_width=True)
+                    c2.image(overlay(img, cam), caption="Grad-CAM — 판단 근거 영역", use_container_width=True)
 
-                st.markdown("**클래스별 확률**")
-                st.bar_chart({c: float(p) for c, p in zip([LABEL_KR[c] for c in CLASSES], probs)})
-                st.caption("⚠️ Grad-CAM은 보조 지표 — 잎맥·배경 등 비병변 영역에 반응할 수 있어 사람 검수가 필요합니다.")
+                    st.markdown("**클래스별 확률**")
+                    st.bar_chart({c: float(p) for c, p in zip([LABEL_KR[c] for c in CLASSES], probs)})
+                    st.caption("⚠️ Grad-CAM은 보조 지표 — 잎맥·배경 등 비병변 영역에 반응할 수 있어 사람 검수가 필요합니다.")
             else:
                 st.info("잎 사진을 업로드하면 진단 결과와 Grad-CAM 히트맵이 표시됩니다.")
 
