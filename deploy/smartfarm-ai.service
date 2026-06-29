@@ -1,5 +1,6 @@
 [Unit]
-Description=SmartFarm AI Streamlit (multipage)
+Description=SmartFarm AI Streamlit (multipage, port 8501)
+# ⚠️ 유닛명은 반드시 smartfarm-ai — 이 서버의 기존 Java 백엔드 smartfarm.service 와 충돌 금지
 After=network-online.target
 Wants=network-online.target
 
@@ -15,7 +16,7 @@ ExecStart=/home/opc/smartfarm_ai/.venv/bin/streamlit run app/streamlit_app.py \
           --browser.gatherUsageStats false
 Restart=always
 RestartSec=5
-# 크래시·재부팅 자동 복구. 로그는 journalctl -u smartfarm -f 로 확인
+# 크래시·재부팅 자동 복구. 로그는 journalctl -u smartfarm-ai -f 로 확인
 
 [Install]
 WantedBy=multi-user.target

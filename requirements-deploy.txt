@@ -1,0 +1,19 @@
+# 배포(서버) 전용 런타임 의존성 — app/ 가 실제 import 하는 것만.
+# dev/노트북/EDA(jupyter·ydata-profiling·phik·matplotlib 등)는 제외 → aarch64에서 소스 빌드 불필요.
+# 업데이트: app/ import 가 바뀌면 이 파일도 동기화. (전체 개발용은 requirements.txt)
+
+# Phase 1 — ML
+pandas
+numpy
+scikit-learn==1.7.2      # .pkl payload 로딩 호환 (LabelEncoder 등)
+xgboost                  # Phase1 분류 모델(.pkl) 본체
+joblib                   # .pkl 로드
+
+# Streamlit 멀티페이지 (st.navigation → 1.40+)
+streamlit>=1.40
+
+# Phase 2 — DL (aarch64: torch/torchvision CPU 휠 자동)
+torch>=2.2
+torchvision>=0.17
+ultralytics>=8.3         # YOLOv8 검출 (phase2_dl.load_yolo)
+Pillow                   # PIL — 이미지 업로드/전처리
