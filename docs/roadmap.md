@@ -53,7 +53,7 @@
 - ✅ 2-4 CNN 기초 (Conv·Pooling) — FashionMNIST acc 0.87
 - ✅ 2-5 전이학습 — **여러 백본 비교**(resnet18·mobilenet_v2 둘 다 0.938), 토마토 잎 **3분류**(정상·잎곰팡이·황화잎말이) ⭐
 - ✅ 2-6 **Grad-CAM** (설명가능 AI — 어느 병반을 보고 판단했나) ⭐
-- ✅ 2-8 LSTM — 환경 **다변량 8변수·198개 시계열** 통합 (MAE 1.22℃ < baseline 1.27℃)
+- ✅ 2-8 LSTM — 환경 **다변량 8변수·485개 시계열**(2022~24 다년) 통합 (MAE 1.18℃ < baseline 1.25℃ · 단년 1.22→다년 1.18 데이터 양 효과)
 
 **STEP 3 · 평가 — 강건화·검증** — `03_eval.py`
 - ✅ 2-7 과적합·불균형·학습안정 (클래스가중치 → 소수 질병 recall 0.2→0.9)
@@ -101,6 +101,6 @@
 - **DL 프레임워크:** PyTorch (MPS) · **알림:** 텔레그램
 
 ## ✅ 다음 액션 (Phase 3 LLM 시작)
-- Phase 2 DL 완료: 3분류(CNN val 0.94)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+다변량 시계열(LSTM MAE 1.22℃<baseline) · 수행내역서 `phase2_dl.md`
+- Phase 2 DL 완료: 3분류(CNN val 0.94)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+다변량 시계열(LSTM MAE 1.18℃<baseline 1.25, 485개 다년) · 수행내역서 `phase2_dl.md`
 1. 청크 3-1(LLM 기초·프롬프트)부터 → `src/llm/`
 2. CNN 진단 + LSTM 예측 + RAG 재배가이드 → 자연어 처방 통합 파이프라인
