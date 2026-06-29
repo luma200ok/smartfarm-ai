@@ -26,6 +26,9 @@ device = "mps" if torch.backends.mps.is_available() else "cpu"
 CLASSES = ["leaf_mold", "normal", "tylcv"]       # ImageFolder 알파벳순(학습과 동일)
 LABEL_KR = {"leaf_mold": "🦠 잎곰팡이병", "normal": "🌿 정상",
             "tylcv": "🦠 황화잎말이바이러스"}
+# OOD 가드: 닫힌 분류기라 토마토 잎이 아닌 이미지도 한 클래스로 찍음.
+# 최상위 확률이 이 값 미만이면 "잎 사진이 아닐 수 있음"으로 안내(완벽한 차단 아님 — 과신 OOD는 못 거름).
+CONF_THRESHOLD = 0.70
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
@@ -115,16 +118,25 @@ def render():
                      "2) `python src/dl/02_core.py --chunk 2-5`")
         else:
             model = load_model()
+            st.caption("ℹ️ 이 모델은 **토마토 잎 사진 전용**입니다. 잎이 아닌 이미지는 의미 없는 결과가 나올 수 있습니다.")
             up = st.file_uploader("토마토 잎 사진 업로드", type=["jpg", "jpeg", "png"], key="diag")
             if up:
                 pil = Image.open(up)
                 label, prob, probs, cam, img = predict_with_cam(model, pil)
 
-                st.subheader(f"진단: {LABEL_KR[label]}  (확률 {prob:.1%})")
-                if label != "normal":
-                    st.warning(f"{LABEL_KR[label]}이(가) 의심됩니다. 오른쪽 히트맵의 붉은 영역(병반 추정)을 확인하세요.")
+                if prob < CONF_THRESHOLD:
+                    # 신뢰도 낮음 → OOD(잎 아님) 의심. 진단은 참고용으로만 노출.
+                    st.warning(
+                        f"⚠️ 신뢰도가 낮습니다(최고 {prob:.1%} < {CONF_THRESHOLD:.0%}). "
+                        "**토마토 잎 사진이 맞는지 확인하세요.** 잎이 아닌 이미지일 가능성이 큽니다.\n\n"
+                        f"(참고용 추정: {LABEL_KR[label]})"
+                    )
                 else:
-                    st.success("정상으로 판단됩니다.")
+                    st.subheader(f"진단: {LABEL_KR[label]}  (확률 {prob:.1%})")
+                    if label != "normal":
+                        st.warning(f"{LABEL_KR[label]}이(가) 의심됩니다. 오른쪽 히트맵의 붉은 영역(병반 추정)을 확인하세요.")
+                    else:
+                        st.success("정상으로 판단됩니다.")
 
                 c1, c2 = st.columns(2)
                 c1.image(img, caption="입력(224×224)", use_container_width=True)
