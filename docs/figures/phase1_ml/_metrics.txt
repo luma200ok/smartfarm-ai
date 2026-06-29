@@ -1,26 +1,27 @@
 test-set (낙관적·상대 비교)
-LogisticRegression	Acc=0.410	F1=0.370
-RandomForest	Acc=0.801	F1=0.770
-XGBoost	Acc=0.797	F1=0.776
+LogisticRegression	Acc=0.377	F1=0.332
+RandomForest	Acc=0.746	F1=0.700
+XGBoost	Acc=0.716	F1=0.677
 
 cross-val F1(macro)
-LogisticRegression	SKF=0.371±0.003	GKF=0.326±0.046
-RandomForest	SKF=0.770±0.008	GKF=0.413±0.027
-XGBoost	SKF=0.777±0.006	GKF=0.415±0.028
+LogisticRegression	SKF=0.328±0.003	GKF=0.311±0.022
+RandomForest	SKF=0.702±0.004	GKF=0.496±0.040
+XGBoost	SKF=0.673±0.004	GKF=0.492±0.039
 BEST(GroupKFold)	XGBoost
 
 classification_report(test, best):
               precision    recall  f1-score   support
 
-          가지       0.92      0.62      0.74       143
-          국화       0.81      0.54      0.65       168
-          딸기       0.82      0.83      0.83      1217
-       방울토마토       0.77      0.67      0.72       963
-          오이       0.82      0.73      0.77       539
-       완숙토마토       0.74      0.79      0.77      1584
-          참외       0.90      0.91      0.91       830
-        파프리카       0.78      0.87      0.82      1212
+          가지       0.71      0.60      0.65       991
+          국화       0.68      0.47      0.56       624
+          딸기       0.76      0.76      0.76      3658
+       방울토마토       0.66      0.69      0.67      5048
+          수박       0.57      0.41      0.48       205
+          오이       0.75      0.63      0.68      2208
+       완숙토마토       0.66      0.64      0.65      4542
+          참외       0.85      0.87      0.86      2446
+        파프리카       0.72      0.85      0.78      3551
 
-    accuracy                           0.80      6656
-   macro avg       0.82      0.75      0.78      6656
-weighted avg       0.80      0.80      0.80      6656
+    accuracy                           0.72     23273
+   macro avg       0.71      0.66      0.68     23273
+weighted avg       0.72      0.72      0.71     23273

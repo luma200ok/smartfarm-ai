@@ -162,6 +162,10 @@ def main():
     print("[4] 교차검증 3모델 × 2방식 — 베스트는 GroupKFold(누수 차단) 기준")
     cv = cross_validate(X, y, groups)
     best_name = max(cv, key=lambda n: cv[n]["gkf"].mean())
+    # GKF 차이가 std 이내(±0.01)면 통계적 동률 → 표데이터 관례·Phase1 일관성상 XGBoost 우선
+    # (다년 결합 시 RF 0.496 vs XGB 0.492로 사실상 동률 — 모델을 고정해 '데이터 양 효과'만 비교)
+    if best_name != "XGBoost" and cv["XGBoost"]["gkf"].mean() >= cv[best_name]["gkf"].mean() - 0.01:
+        best_name = "XGBoost"
     print(f"\n  → 베스트(GroupKFold F1 기준): {best_name}  "
           f"GKF={cv[best_name]['gkf'].mean():.3f} ± {cv[best_name]['gkf'].std():.3f}")
 

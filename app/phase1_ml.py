@@ -1,5 +1,5 @@
 """
-Phase 1 (ML) — Streamlit 데모: 환경 센서 → 재배 작물 8종 분류
+Phase 1 (ML) — Streamlit 데모: 환경 센서 → 재배 작물 9종 분류 (2022~2024 다년)
 
 흐름: 슬라이더 입력 → 저장된 XGBoost 묶음(.pkl) 로드 → 예측(정수→작물명 매핑) → 결과 표시
 실행: streamlit run app/phase1_ml.py  (프로젝트 루트에서)
@@ -145,11 +145,11 @@ def tab_guide(payload):
 # ── 탭3 📊 모델 평가 ─────────────────────────────────────────────────────
 def tab_eval(payload):
     model_name = payload.get("model_name", "XGBoost")
-    st.subheader("모델 3종 비교")
+    st.subheader("모델 3종 비교 (2022~2024 다년 · 9작물)")
     st.table(pd.DataFrame({
         "모델": ["LogisticRegression", "RandomForest", f"**{model_name} (베스트)**"],
-        "Test Accuracy": ["0.41", "0.80", "0.80"],
-        "Test F1(macro)": ["0.37", "0.77", "0.78"],
+        "Test Accuracy": ["0.38", "0.75", "0.72"],
+        "Test F1(macro)": ["0.33", "0.70", "0.68"],
     }))
 
     img_compare = FIG / "model_compare.png"
@@ -161,9 +161,9 @@ def tab_eval(payload):
         "평가 방법": [
             "① Test set (stratify)",
             "② StratifiedKFold(5) — 낙관적",
-            "③ GroupKFold(농가+작기) — 현실적",
+            "③ GroupKFold(연도+농가+작기) — 현실적",
         ],
-        "F1(macro)": ["0.78", "0.77", "**0.41**"],
+        "F1(macro)": ["0.68", "0.67", "**0.49**"],
         "의미": [
             "단일 분할",
             "같은 농가가 train·test에 섞임 → 과대평가",
@@ -171,9 +171,10 @@ def tab_eval(payload):
         ],
     }))
     st.info(
-        "🔑 랜덤 분리 0.77 vs 농가 단위 분리 0.41 — **36%p 폭락**.\n\n"
+        "🔑 랜덤 분리 0.67 vs 농가 단위 분리 0.49 — **18%p 격차**.\n\n"
         "모델이 '농가·작기 고유 패턴'을 외워 성능을 부풀린다. "
-        "새 농가에 대한 진짜 일반화 성능은 **0.41**이 정직한 값."
+        "새 농가에 대한 진짜 일반화 성능은 **0.49**가 정직한 값.\n\n"
+        "📈 단년(2022)일 땐 0.77 vs 0.41(36%p)로 더 컸으나, **다년 결합으로 18%p까지 완화**."
     )
 
     st.subheader("혼동행렬 · 피처 중요도")
@@ -184,6 +185,13 @@ def tab_eval(payload):
     if img_imp.exists():
         st.image(str(img_imp), caption="피처 중요도 (RandomForest 기준)")
 
+    st.subheader("📈 단년 vs 다년 — 데이터 양 효과")
+    img_yc = FIG / "year_compare.png"
+    if img_yc.exists():
+        st.image(str(img_yc),
+                 caption="2022 단년 → 2022~24 다년(데이터 3.5배): 공통 8작물 recall 비교 — "
+                         "macro-F1 0.44→0.51(+0.073), 데이터 적던 작물일수록 향상 + 수박 신규 커버")
+
 
 # ── 탭4 📑 EDA ───────────────────────────────────────────────────────────
 def tab_eda():
@@ -191,7 +199,7 @@ def tab_eda():
 
     eda_items = [
         ("eda_class_distribution.png",
-         "작물별 표본 수. 완숙토마토(7,920) ~ 가지(717) 약 11배 불균형 → F1(macro) 평가 중심."),
+         "작물별 표본 수. 방울토마토(25,241) ~ 수박(1,023) 약 25배 불균형 → F1(macro) 평가 중심."),
         ("eda_feature_distributions.png",
          "피처 8종 분포. 내부 온·습도는 작물별로 제어되는 값이라 분포 폭이 다양하다."),
         ("eda_correlation.png",
@@ -215,8 +223,8 @@ def main():
 
     st.title("🌱 스마트팜 작물 분류 데모 — Phase 1 ML")
     st.caption(
-        "환경 센서(온·습도·CO2·일사량) 입력 → XGBoost로 재배 작물 8종 예측 | "
-        "농진청 스마트팜 현장 데이터(2022) · test F1 0.78"
+        "환경 센서(온·습도·CO2·일사량) 입력 → XGBoost로 재배 작물 9종 예측 | "
+        "농진청 스마트팜 현장 데이터(2022~2024) · test F1 0.68 · GroupKFold F1 0.49"
     )
 
     payload = load_payload()
