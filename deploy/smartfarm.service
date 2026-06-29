@@ -1,0 +1,21 @@
+[Unit]
+Description=SmartFarm AI Streamlit (multipage)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=opc
+WorkingDirectory=/home/opc/smartfarm_ai
+# 외부 노출은 Caddy(80/443)가 담당 → streamlit 은 루프백에만 바인딩
+ExecStart=/home/opc/smartfarm_ai/.venv/bin/streamlit run app/streamlit_app.py \
+          --server.port 8501 \
+          --server.address 127.0.0.1 \
+          --server.headless true \
+          --browser.gatherUsageStats false
+Restart=always
+RestartSec=5
+# 크래시·재부팅 자동 복구. 로그는 journalctl -u smartfarm -f 로 확인
+
+[Install]
+WantedBy=multi-user.target
