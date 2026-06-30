@@ -11,11 +11,15 @@
 [![Live Demo](https://img.shields.io/badge/Streamlit-통합_라이브_데모-FF4B4B?logo=streamlit&logoColor=white)](https://smartfarm-ai.rkqkdrnportfolio.shop)
 
 > 🚀 **통합 라이브 데모 (ML·DL·LLM 한 페이지):** **https://smartfarm-ai.rkqkdrnportfolio.shop**
-> 📄 **수행내역서:** [① ML](docs/phase1_ml.md) · [② DL](docs/phase2_dl.md) · [③ LLM](docs/phase3_llm.md)
+
+📄 **수행내역서 (단계별 상세 보고서):**
+- [① Phase 1 · ML — 환경 → 작물 분류](docs/phase1_ml.md)
+- [② Phase 2 · DL — 잎 병해 진단 + 환경 시계열](docs/phase2_dl.md)
+- [③ Phase 3 · LLM — 자연어 처방 (예정)](docs/phase3_llm.md)
 
 ---
 
-## 📌 진행 단계
+## 📌 진행 단계 (한눈 요약)
 
 | Phase | 내용 | 기술 | 핵심 성과 | 상태 |
 |---|---|---|---|---|
@@ -23,13 +27,15 @@
 | **2. DL** | 잎 사진 진단(CNN·YOLO) + 환경 시계열(LSTM) | PyTorch·전이학습·Grad-CAM·MLflow | 진단 acc **0.97** · YOLO 0.78 · LSTM 1.18℃ | ✅ 완료 |
 | **3. LLM** | 진단+환경 → 자연어 처방·알림 | Claude API·RAG | — | ⚪ 예정 |
 
-**목차** · [🌱 Phase 1 ML](#-phase-1-ml--환경-기반-작물-분류) · [🍃 Phase 2 DL](#-phase-2-dl--잎-병해-진단--환경-시계열) · [💬 Phase 3 LLM](#-phase-3-llm--자연어-처방-예정) · [🗂️ 구조·데이터·실행](#️-구조--데이터--실행)
-
+> 아래 **Phase별 블록을 하나씩 펼쳐** 핵심 성과·그림·상세를 확인하세요.
 > 문서: [PRD](docs/prd.md) · [로드맵](docs/roadmap.md) · [설계 결정(ADR)](docs/decisions.md)
 
 ---
 
 ## 🌱 Phase 1 (ML) — 환경 기반 작물 분류
+
+<details>
+<summary><b>📊 핵심 성과 · 그림 · 상세 — 펼쳐보기</b></summary>
 
 농진청 스마트팜 현장 농가 데이터(**2022~2024 다년 결합**)로 **환경 센서 → 작물 9종 분류**.
 
@@ -39,23 +45,23 @@
 
 ![혼동행렬](docs/figures/phase1_ml/confusion_matrix.png)
 
-<details>
-<summary><b>📊 상세 — 데이터 · 평가 3겹 · 데이터 양 효과</b></summary>
-
+**상세**
 - 288만 시간별 → **116,365 일별 집계**, 9작물(완숙·방울토마토·딸기·오이·참외·파프리카·가지·국화·수박)
 - **평가 3겹:** Test F1 0.68 · StratifiedKFold 0.67(낙관적) · **GroupKFold 0.49**(현실적 — 처음 보는 농가)
 - 트리 부스팅(XGBoost·RF)이 선형(로지스틱 0.33) 대비 압도 → 환경↔작물은 **비선형**
 - 데이터 양 효과(작물별 recall): 방울토마토 +0.24 · 오이 +0.18 · 가지 +0.14, 수박은 단년엔 불가 → 다년 신규 커버
 - 한계: 환경은 농가가 **제어하는 값**이라 작물 고유 신호가 약함 → 새 농가 일반화(0.49)는 본질적 난제
-- 자세히 → **[phase1_ml.md](docs/phase1_ml.md)**
+
+🚀 [통합 앱 → **Phase 1 · ML** 탭](https://smartfarm-ai.rkqkdrnportfolio.shop) · 📄 [수행내역서](docs/phase1_ml.md)
 
 </details>
-
-🚀 **데모:** [통합 앱 → **Phase 1 · ML** 탭](https://smartfarm-ai.rkqkdrnportfolio.shop) — 환경값 슬라이더 입력 → 작물 9종 예측·신뢰도 Top3
 
 ---
 
 ## 🍃 Phase 2 (DL) — 잎 병해 진단 + 환경 시계열
+
+<details>
+<summary><b>📊 핵심 성과 · 그림 · 상세 — 펼쳐보기</b></summary>
 
 토마토 잎 사진 → **3분류 진단(CNN)** + **병해 잎 위치 검출(YOLO)** + 환경 **시계열 예측(LSTM)**. ML이 못 하던 **이미지·순서** 모달리티를 더하고 설명가능 AI까지.
 
@@ -66,32 +72,32 @@
 
 ![Grad-CAM](docs/figures/phase2_dl/06_gradcam.png)
 
-<details>
-<summary><b>📊 상세 — 데이터 정제 · 평가 · 트러블슈팅</b></summary>
-
+**상세**
 - 🔑 **데이터 정제(핵심):** AI Hub 071 정상 원천에 과실·꽃·줄기 혼재 → 부위 라벨로 **잎(area=3)만 선별** + 질병 Train 확보(정상 1,330·질병 2,616) → 정확도 0.94→0.97~0.99
 - **평가 심화:** 3×3 혼동행렬(병종 혼동 적음) · **FN 6건** · 불균형 가중치(질병 recall 0.86/0.93 → 0.96/0.98)
 - **검출:** YOLOv8n 3클래스 전이학습(mAP@50 0.78) · **시계열:** 단년 1.22 → 다년 1.18℃(데이터 양 효과 재현)
-- 자세히 → **[phase2_dl.md](docs/phase2_dl.md)** · 막혔던 곳 → **[트러블슈팅](docs/troubleshooting/troubleshooting.md)**
+
+🚀 [통합 앱 → **Phase 2 · DL** 탭](https://smartfarm-ai.rkqkdrnportfolio.shop) · 📄 [수행내역서](docs/phase2_dl.md) · 🔧 [트러블슈팅](docs/troubleshooting/troubleshooting.md)
 
 </details>
-
-🚀 **데모:** [통합 앱 → **Phase 2 · DL** 탭](https://smartfarm-ai.rkqkdrnportfolio.shop) — 잎 사진 업로드 → 진단+Grad-CAM · YOLO 위치 검출
 
 ---
 
 ## 💬 Phase 3 (LLM) — 자연어 처방 (예정)
 
-**CNN 진단 + LSTM 예측 + 재배가이드(RAG) → LLM 자연어 처방 → 🔔 알림.** 숫자·라벨을 사람이 읽는 "처방"으로.
-
 <details>
-<summary><b>🚧 로드맵 — 4단계 + 목표 출력</b></summary>
+<summary><b>🚧 로드맵 · 목표 출력 — 펼쳐보기</b></summary>
+
+**CNN 진단 + LSTM 예측 + 재배가이드(RAG) → LLM 자연어 처방 → 🔔 알림.** 숫자·라벨을 사람이 읽는 "처방"으로.
 
 - **3-1 Claude API** — 진단·예측 숫자/라벨 → 자연어 처방 생성
 - **3-2 RAG** — 농사로 재배가이드 검색 → 근거 있는 조언
 - **3-3 통합 파이프라인** — ML/LSTM 예측 + CNN 진단 + RAG → 처방 통합
 - **3-4 알림·대시보드** — 텔레그램 알림봇 + Streamlit 통합 대시보드
-- **🎯 목표 출력:** 🔬 잎곰팡이병 의심(87%) 감염 잎 제거·습도↓ · 💧 토양수분 30% 낮음 관수 · 🌡️ 2시간 뒤 32℃ 환기 준비
+
+**🎯 목표 출력:** 🔬 잎곰팡이병 의심(87%) 감염 잎 제거·습도↓ · 💧 토양수분 30% 낮음 관수 · 🌡️ 2시간 뒤 32℃ 환기 준비
+
+진행 상황 → [로드맵 Phase 3](docs/roadmap.md)
 
 </details>
 
