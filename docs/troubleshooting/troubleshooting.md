@@ -5,6 +5,8 @@
 > 근거: `fix` 커밋 / devlog / 배포 가이드(`docs/_local/deploy/oci-deployment.md`).
 > 정리: 2026-06-30.
 
+**바로가기:** [A. ML](#ml) · [B. DL](#dl) · [C. 배포·OCI](#deploy)
+
 | # | 단계 | 한 줄 요약 | 근거 커밋 |
 |---|---|---|---|
 | A-1 | ML | 데이터 누수로 평가 점수 부풀림 → GroupKFold로 차단 | b84dbb1 |
@@ -26,6 +28,8 @@
 | C-9 | 배포 | 신규 모델(.pt) CI/CD 미반영 → 진단탭 크래시 | 3cdc30f |
 
 ---
+
+<a id="ml"></a>
 
 ## A. Phase 1 — ML (환경 → 작물 분류)
 
@@ -61,6 +65,8 @@
 
 ---
 
+<a id="dl"></a>
+
 ## B. Phase 2 — DL (잎 진단 CNN / LSTM)
 
 ### B-1. 토마토 데이터 분할 — 질병 val 0장 버그
@@ -95,6 +101,8 @@
 - **커밋**: `4041656` (`src/dl/prepare_tomato.py`·`02_core.py`·`app/phase2_dl.py`)
 
 ---
+
+<a id="deploy"></a>
 
 ## C. 배포 (OCI / Streamlit)
 
