@@ -165,14 +165,12 @@ def render():
                 pil = None
 
             if pil is not None:
-                # 결과 영역 — 분석 대상 원본을 항상 맨 위에 고정 표시(클릭/업로드 시 여기가 바뀜)
                 st.divider()
-                pcol, _ = st.columns([1, 2])
-                pcol.image(pil, caption="🔍 분석한 사진", use_container_width=True)
-
                 # OOD 게이트: ImageNet 식물 판별기로 잎/비잎을 먼저 거름(임계값 미만이면 진단 차단)
                 score = plant_score(pil)
                 if score < PLANT_THRESHOLD:
+                    pcol, _ = st.columns([1, 2])
+                    pcol.image(pil, caption="🔍 분석한 사진", use_container_width=True)
                     st.error(
                         f"🚫 **토마토 잎으로 보이지 않습니다**(잎·식물 신호 {score:.1%}). 진단을 진행하지 않습니다.\n\n"
                         "이 진단기는 토마토 잎 전용입니다. 잎이 화면에 크게 보이도록 촬영해 업로드하세요."
@@ -181,14 +179,15 @@ def render():
                     label, prob, probs, cam, img = predict_with_cam(model, pil)
 
                     st.subheader(f"진단: {LABEL_KR[label]}  (확률 {prob:.1%})")
-                    if label != "normal":
-                        st.warning(f"{LABEL_KR[label]}이(가) 의심됩니다. 오른쪽 히트맵의 붉은 영역(병반 추정)을 확인하세요.")
-                    else:
-                        st.success("정상으로 판단됩니다.")
-
-                    gcol, _ = st.columns([1, 2])
+                    # 분석한 사진 + 판단 근거(Grad-CAM)를 같은 라인에 나란히 배치
+                    icol, gcol = st.columns(2)
+                    icol.image(pil, caption="🔍 분석한 사진", use_container_width=True)
                     gcol.image(overlay(img, cam), caption="Grad-CAM — 판단 근거(붉을수록 주목한 영역)",
                                use_container_width=True)
+                    if label != "normal":
+                        st.warning(f"{LABEL_KR[label]}이(가) 의심됩니다. 위 히트맵의 붉은 영역(병반 추정)을 확인하세요.")
+                    else:
+                        st.success("정상으로 판단됩니다.")
 
                     st.markdown("**클래스별 확률**")
                     st.bar_chart({c: float(p) for c, p in zip([LABEL_KR[c] for c in CLASSES], probs)})
@@ -217,8 +216,22 @@ def render():
             yolo = load_yolo()
             up2 = st.file_uploader("토마토 잎 사진 업로드", type=["jpg", "jpeg", "png"], key="detect")
             conf = st.slider("신뢰도 임계값(conf)", 0.05, 0.9, 0.25, 0.05)
+
+            # YOLO 전용 예시 — 진단용 클로즈업과 달리 '잎이 여러 개 보이는 장면'(yolo_*.jpg)
+            det_samples = [(c, SAMPLE_DIR / f"yolo_{c}.jpg") for c in SAMPLE_CLASSES]
+            det_samples = [(c, p) for c, p in det_samples if p.exists()]
+
+            # 입력 결정: 업로드 우선(샘플 선택 해제), 없으면 선택한 예시 사용
             if up2:
+                st.session_state.pop("detect_sample", None)
                 pil2 = Image.open(up2)
+            elif st.session_state.get("detect_sample"):
+                pil2 = Image.open(SAMPLE_DIR / f"yolo_{st.session_state['detect_sample']}.jpg")
+            else:
+                pil2 = None
+
+            if pil2 is not None:
+                st.divider()
                 annotated, dets = detect(yolo, pil2, conf=conf)
                 st.image(annotated, caption="YOLO 검출 — 박스 위치 + 정상/질병 + 신뢰도",
                          use_container_width=True)
@@ -229,7 +242,18 @@ def render():
                 else:
                     st.info("임계값 이상으로 검출된 잎이 없습니다. conf 슬라이더를 낮춰 보세요.")
             else:
-                st.info("잎 사진을 업로드하면 잎 위치 박스와 정상/질병 라벨이 표시됩니다.")
+                st.info("잎 사진을 업로드하거나 아래 예시 사진을 클릭하면 잎 위치 박스와 정상/질병 라벨이 표시됩니다.")
+
+            # 예시 사진 갤러리 — 결과 아래에 배치(클릭하면 위쪽 검출 결과가 갱신됨)
+            if det_samples:
+                st.divider()
+                st.markdown("**예시 사진으로 바로 체험** (클릭하면 위쪽에 검출 결과가 표시됩니다)")
+                for col, (c, p) in zip(st.columns(len(det_samples)), det_samples):
+                    col.image(str(p), caption=LABEL_KR[c], use_container_width=True)
+                    if col.button("이 사진으로 검출", key=f"det_{c}", use_container_width=True):
+                        st.session_state["detect_sample"] = c
+                        st.toast(f"예시 ‘{LABEL_KR[c]}’ 선택 — 위쪽 검출 결과를 확인하세요", icon="🎯")
+                        st.rerun()
 
 
 if __name__ == "__main__":
