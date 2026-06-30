@@ -21,6 +21,8 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 CKPT = ROOT / "models" / "tomato_resnet18.pt"
 YOLO_CKPT = ROOT / "models" / "tomato_yolov8n.pt"
+SAMPLE_DIR = ROOT / "app" / "samples"            # 예시 사진(사진 없는 외부 체험용)
+SAMPLE_CLASSES = ["normal", "leaf_mold", "tylcv"]
 
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 CLASSES = ["leaf_mold", "normal", "tylcv"]       # ImageFolder 알파벳순(학습과 동일)
@@ -148,8 +150,25 @@ def render():
             st.caption("ℹ️ 이 모델은 **토마토 잎 사진 전용**입니다. "
                        "업로드하면 먼저 **잎/비잎을 판별**해, 잎이 아닌 이미지는 진단하지 않습니다.")
             up = st.file_uploader("토마토 잎 사진 업로드", type=["jpg", "jpeg", "png"], key="diag")
+
+            # 예시 사진은 결과 아래에 렌더(클릭 시 rerun → 위쪽 결과가 갱신됨)
+            samples = [(c, SAMPLE_DIR / f"{c}.jpg") for c in SAMPLE_CLASSES]
+            samples = [(c, p) for c, p in samples if p.exists()]
+
+            # 입력 결정: 업로드가 있으면 업로드 우선(샘플 선택 해제), 없으면 선택한 예시 사용
             if up:
+                st.session_state.pop("diag_sample", None)
                 pil = Image.open(up)
+            elif st.session_state.get("diag_sample"):
+                pil = Image.open(SAMPLE_DIR / f"{st.session_state['diag_sample']}.jpg")
+            else:
+                pil = None
+
+            if pil is not None:
+                # 결과 영역 — 분석 대상 원본을 항상 맨 위에 고정 표시(클릭/업로드 시 여기가 바뀜)
+                st.divider()
+                pcol, _ = st.columns([1, 2])
+                pcol.image(pil, caption="🔍 분석한 사진", use_container_width=True)
 
                 # OOD 게이트: ImageNet 식물 판별기로 잎/비잎을 먼저 거름(임계값 미만이면 진단 차단)
                 score = plant_score(pil)
@@ -167,15 +186,26 @@ def render():
                     else:
                         st.success("정상으로 판단됩니다.")
 
-                    c1, c2 = st.columns(2)
-                    c1.image(img, caption="입력(224×224)", use_container_width=True)
-                    c2.image(overlay(img, cam), caption="Grad-CAM — 판단 근거 영역", use_container_width=True)
+                    gcol, _ = st.columns([1, 2])
+                    gcol.image(overlay(img, cam), caption="Grad-CAM — 판단 근거(붉을수록 주목한 영역)",
+                               use_container_width=True)
 
                     st.markdown("**클래스별 확률**")
                     st.bar_chart({c: float(p) for c, p in zip([LABEL_KR[c] for c in CLASSES], probs)})
                     st.caption("⚠️ Grad-CAM은 보조 지표 — 잎맥·배경 등 비병변 영역에 반응할 수 있어 사람 검수가 필요합니다.")
             else:
-                st.info("잎 사진을 업로드하면 진단 결과와 Grad-CAM 히트맵이 표시됩니다.")
+                st.info("잎 사진을 업로드하거나 아래 예시 사진을 클릭하면 진단 결과와 Grad-CAM 히트맵이 표시됩니다.")
+
+            # 예시 사진 갤러리 — 결과 아래에 배치(사진 없는 외부 체험용, 클릭하면 위 결과가 갱신됨)
+            if samples:
+                st.divider()
+                st.markdown("**예시 사진으로 바로 체험** (클릭하면 위쪽에 결과가 표시됩니다)")
+                for col, (c, p) in zip(st.columns(len(samples)), samples):
+                    col.image(str(p), caption=LABEL_KR[c], use_container_width=True)
+                    if col.button("이 사진으로 진단", key=f"samp_{c}", use_container_width=True):
+                        st.session_state["diag_sample"] = c
+                        st.toast(f"예시 ‘{LABEL_KR[c]}’ 선택 — 위쪽 결과를 확인하세요", icon="🔬")
+                        st.rerun()
 
     # ── 탭 2: YOLO 위치 검출 ──
     with tab_detect:
