@@ -44,8 +44,8 @@ def make_eda():
     # 확보 가능한 원천 이미지 수(불균형 근거) — prepare_tomato 의 인덱싱 재사용
     try:
         from prepare_tomato import _collect
-        buckets = _collect()
-        avail = {c: len(buckets[c]) for c in ("normal", "leaf_mold", "tylcv")}
+        diag, _part = _collect()          # _collect 는 (진단, 부위) 2버킷 반환
+        avail = {c: len(diag[c]) for c in ("normal", "leaf_mold", "tylcv")}
     except Exception as e:
         print(f"  (원천 카운트 스킵: {e}) → 폴더 기준으로 대체")
         avail = {c: len(glob.glob(f"{TOMATO}/train/{c}/*.jpg")) +
@@ -63,9 +63,9 @@ def make_eda():
     for b, v in zip(bars, vals):
         ax.text(b.get_x() + b.get_width()/2, v, f"{v}", ha="center", va="bottom", fontsize=11)
     ax.set_ylabel("확보 이미지 수 (log)")
-    ratio = avail["normal"] / max(avail["leaf_mold"] + avail["tylcv"], 1)
-    ax.set_title(f"클래스 분포 — 정상 {avail['normal']} vs 질병 {avail['leaf_mold']+avail['tylcv']}"
-                 f"  (≈{ratio:.0f}:1 불균형)")
+    n_dis = avail["leaf_mold"] + avail["tylcv"]
+    ax.set_title(f"클래스 분포(정제 후) — 정상(잎) {avail['normal']} · 질병 {n_dis}\n"
+                 f"정상=잎(area3)만 선별 + 질병 Train 확보 → 균형 데이터")
 
     # [0,1][0,2][1,0] 클래스별 샘플 잎
     panel = [axes[0, 1], axes[0, 2], axes[1, 0]]

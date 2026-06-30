@@ -30,7 +30,8 @@ import matplotlib.pyplot as plt
 ROOT = "/Users/jeongjaebong/IntelliJ/mycode/toy_project/solo/smartfarm_ai"
 FIGS = f"{ROOT}/docs/figures/phase2_dl"
 DATA_TV = f"{ROOT}/data/torchvision"      # FashionMNIST 캐시
-TOMATO = f"{ROOT}/data/tomato"            # prepare_tomato.py 산출물(ImageFolder)
+TOMATO = f"{ROOT}/data/tomato"            # prepare_tomato.py 산출물(진단 잎 3분류)
+PART = f"{ROOT}/data/tomato_part"         # prepare_tomato.py 산출물(부위 4분류 게이트)
 MODELS = f"{ROOT}/models"
 ENV_CSV = f"{ROOT}/data/processed/env_daily.csv"
 for d in (FIGS, DATA_TV, MODELS):
@@ -152,7 +153,8 @@ def _build_backbone(name, n_classes=2):
 
 
 # ── ② 데이터 준비: 토마토 사진을 224 크기·정규화로 가공해 공급(교재 준비) ──
-def _tomato_loaders(batch=32):
+def _imagefolder_loaders(root, batch=32):
+    """ImageFolder(train/val) 로더 + 클래스명. (전이학습 공용 — 진단·부위 모두 사용)"""
     from torchvision import datasets, transforms
     tf_train = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -163,11 +165,15 @@ def _tomato_loaders(batch=32):
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
-    train_ds = datasets.ImageFolder(f"{TOMATO}/train", tf_train)
-    val_ds = datasets.ImageFolder(f"{TOMATO}/val", tf_val)
+    train_ds = datasets.ImageFolder(f"{root}/train", tf_train)
+    val_ds = datasets.ImageFolder(f"{root}/val", tf_val)
     return (DataLoader(train_ds, batch_size=batch, shuffle=True),
             DataLoader(val_ds, batch_size=batch),
             train_ds.classes)
+
+
+def _tomato_loaders(batch=32):
+    return _imagefolder_loaders(TOMATO, batch)
 
 
 # ── ③ 학습: freeze 된 몸통 위에서 머리(head)만 학습 ──
@@ -253,6 +259,35 @@ def run_chunk_2_5():
     print(f"\n[비교] 그림 저장 → {path}")
     best = max(results, key=results.get)
     print(f"  best = {best} ({results[best]:.3f}) — 적은 데이터로도 사전학습 특징 재사용 덕에 고성능.")
+
+
+# ════════════════════════════════════════════════════════════════════
+# 청크 2-5b · 부위 분류기(게이트) — 과실/꽃/잎/줄기 ⭐
+#   잎 진단 앞단에서 입력이 '잎'인지 먼저 판별 → 과실·꽃·줄기는 진단 차단(과육 오분류 방지).
+#   같은 전이학습 틀(resnet18 freeze + head) 재사용 · 071 부위 라벨(area) 전량 활용.
+# ════════════════════════════════════════════════════════════════════
+def run_chunk_2_5b():
+    print("\n" + "═" * 64 + "\n청크 2-5b · 부위 분류기(게이트) ⭐\n" + "═" * 64)
+    if not os.path.isdir(f"{PART}/train"):
+        print("⚠️ 부위 데이터가 없습니다.")
+        print("   먼저:  python src/dl/prepare_tomato.py")
+        return
+
+    train_loader, val_loader, classes = _imagefolder_loaders(PART)
+    print(f"\n부위 클래스 = {classes}  (과실/꽃/잎/줄기, ImageFolder 자동 라벨)")
+
+    model = _build_backbone("resnet18", n_classes=len(classes))
+    acc = _train_head(model, train_loader, val_loader, epochs=5)
+
+    ckpt = f"{MODELS}/tomato_part.pt"
+    torch.save(model.state_dict(), ckpt)
+    # 추론(앱)에서 클래스 순서를 알도록 함께 저장(알파벳순이지만 명시 보관)
+    import json
+    with open(f"{MODELS}/tomato_part_classes.json", "w", encoding="utf-8") as f:
+        json.dump(classes, f, ensure_ascii=False)
+    print(f"\n✅ 부위 분류기 val 정확도 = {acc:.3f}")
+    print(f"   저장 → {ckpt}  (클래스 순서 → tomato_part_classes.json)")
+    print("   앱(phase2_dl.py)에서 '잎' 외 부위는 진단을 차단하는 게이트로 사용.")
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -447,10 +482,10 @@ def run_chunk_2_8():
 # ════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Phase 2 STEP 2 핵심 — 청크 2-4·2-5·2-6·2-8")
-    parser.add_argument("--chunk", choices=["2-4", "2-5", "2-6", "2-8", "all"], default="all")
+    parser.add_argument("--chunk", choices=["2-4", "2-5", "2-5b", "2-6", "2-8", "all"], default="all")
     args = parser.parse_args()
 
-    runners = {"2-4": run_chunk_2_4, "2-5": run_chunk_2_5,
+    runners = {"2-4": run_chunk_2_4, "2-5": run_chunk_2_5, "2-5b": run_chunk_2_5b,
                "2-6": run_chunk_2_6, "2-8": run_chunk_2_8}
     if args.chunk == "all":
         for run in runners.values():

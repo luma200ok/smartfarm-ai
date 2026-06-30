@@ -20,6 +20,7 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 CKPT = ROOT / "models" / "tomato_resnet18.pt"
+PART_CKPT = ROOT / "models" / "tomato_part.pt"   # 부위 분류기(과실/꽃/잎/줄기) — 잎 진단 게이트
 YOLO_CKPT = ROOT / "models" / "tomato_yolov8n.pt"
 SAMPLE_DIR = ROOT / "app" / "samples"            # 예시 사진(사진 없는 외부 체험용)
 SAMPLE_CLASSES = ["normal", "leaf_mold", "tylcv"]
@@ -28,6 +29,8 @@ device = "mps" if torch.backends.mps.is_available() else "cpu"
 CLASSES = ["leaf_mold", "normal", "tylcv"]       # ImageFolder 알파벳순(학습과 동일)
 LABEL_KR = {"leaf_mold": "🦠 잎곰팡이병", "normal": "🌿 정상",
             "tylcv": "🦠 황화잎말이바이러스"}
+PART_CLASSES = ["flower", "fruit", "leaf", "stem"]   # 부위 분류기 학습 순서(ImageFolder 알파벳순)
+PART_KR = {"flower": "🌼 꽃", "fruit": "🍅 과실(열매)", "leaf": "🌿 잎", "stem": "🌱 줄기"}
 # OOD 게이트: 닫힌 3-클래스 분류기는 잎이 아닌 이미지도 한 클래스로 찍는다.
 # → 진단 전에 "토마토 잎인가"를 ImageNet 사전학습 분류기로 판별(식물·잎·채소 클래스 softmax 합).
 #   우리 3-클래스 모델의 logit/feature 로는 잎·OOD 가 겹쳐(실측 ~17%) 못 가르므로, 1000클래스 지식을 빌린다.
@@ -132,6 +135,30 @@ def plant_score(pil):
         return float(torch.softmax(net(x)[0], 0)[idx].sum())
 
 
+@st.cache_resource
+def load_part_model():
+    """부위 분류기(과실/꽃/잎/줄기) resnet18 — 잎 진단 앞단 게이트."""
+    from torchvision import models
+    m = models.resnet18(weights=None)
+    m.fc = nn.Linear(m.fc.in_features, len(PART_CLASSES))
+    m.load_state_dict(torch.load(PART_CKPT, map_location=device))
+    return m.eval().to(device)
+
+
+def predict_part(pil):
+    """입력 사진의 토마토 부위 추론 → (부위코드, 확률). leaf 가 아니면 잎 진단을 막는다."""
+    from torchvision import transforms
+    tf = transforms.Compose([
+        transforms.Resize((224, 224)), transforms.ToTensor(),
+        transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+    model = load_part_model()
+    with torch.no_grad():
+        x = tf(pil.convert("RGB")).unsqueeze(0).to(device)
+        probs = torch.softmax(model(x)[0], 0)
+    idx = int(probs.argmax())
+    return PART_CLASSES[idx], float(probs[idx])
+
+
 # ── 페이지 렌더 (멀티페이지 엔트리가 호출) ───────────────────────────────────
 def render():
     st.title("🍅 토마토 잎 병해 — 진단(Grad-CAM) · 위치 검출(YOLO)")
@@ -174,6 +201,15 @@ def render():
                     st.error(
                         f"🚫 **토마토 잎으로 보이지 않습니다**(잎·식물 신호 {score:.1%}). 진단을 진행하지 않습니다.\n\n"
                         "이 진단기는 토마토 잎 전용입니다. 잎이 화면에 크게 보이도록 촬영해 업로드하세요."
+                    )
+                elif (part := predict_part(pil))[0] != "leaf":
+                    # 식물이지만 잎이 아닌 부위(과실·꽃·줄기) → 잎 진단 차단(과육 오분류 방지)
+                    pcol, _ = st.columns([1, 2])
+                    pcol.image(pil, caption="🔍 분석한 사진", use_container_width=True)
+                    st.error(
+                        f"🚫 이 사진은 **{PART_KR[part[0]]}**(으)로 보입니다(부위 신뢰도 {part[1]:.0%}). "
+                        "이 진단기는 **토마토 잎 전용**입니다 — 잎이 화면에 크게 보이도록 촬영해 업로드하세요.\n\n"
+                        "※ 과실·꽃·줄기 병해는 현재 진단 범위가 아닙니다(학습 데이터가 잎 병해뿐)."
                     )
                 else:
                     label, prob, probs, cam, img = predict_with_cam(model, pil)
