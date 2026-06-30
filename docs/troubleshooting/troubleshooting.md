@@ -23,6 +23,7 @@
 | C-6 | 배포 | 리버스프록시 nginx 점유(Caddy 불가) | — |
 | C-7 | 배포 | certbot command not found(secure_path) | — |
 | C-8 | 배포 | matplotlib 직접 의존성 미명시 | 2a1a572 |
+| C-9 | 배포 | 신규 모델(.pt) CI/CD 미반영 → 진단탭 크래시 | 3cdc30f |
 
 ---
 
@@ -90,7 +91,7 @@
 ### B-5. 정상 데이터에 부위 혼재 → 과육을 병으로 오진 → 부위 게이트
 - **증상**: 토마토 과육(열매) 사진을 넣으면 YOLO는 미검출인데 Grad-CAM 분류기가 '병 의심' 결과를 냄. 잎이 아닌데 진단을 강행.
 - **원인**: AI Hub 071 정상(0.정상) 원천에 잎뿐 아니라 과실·꽃·줄기가 섞여 있는데, 초기 `prepare_tomato`가 부위 라벨(area)을 안 읽고 전부 `normal`로 투입 → 닫힌 3분류기가 과육을 한 클래스로 강제 분류. ImageNet plant_score 게이트(B-4)는 '식물 여부'만 보므로 과육(식물)은 통과.
-- **해결**: ① 진단 `normal`을 area=3(잎)만으로 정제 + 질병 Train 확보로 재학습(0.938→0.99). ② 부위 분류기(과실/꽃/잎/줄기, 0.932)를 잎 진단 앞단 게이트로 추가 — 잎이 아니면 진단 차단(식물→부위 2단 방어).
+- **해결**: ① 진단 `normal`을 area=3(잎)만으로 정제 + 질병 Train 확보로 재학습(0.938→**0.97~0.99**, 서빙 resnet18 0.97·백본 best mobilenet_v2 0.987, MLflow 추적). ② 부위 분류기(과실/꽃/잎/줄기, **0.932**)를 잎 진단 앞단 게이트로 추가 — 잎이 아니면 진단 차단(식물→부위 2단 방어).
 - **커밋**: `4041656` (`src/dl/prepare_tomato.py`·`02_core.py`·`app/phase2_dl.py`)
 
 ---
@@ -142,6 +143,13 @@
 - **원인**: 직접 의존성을 명시하지 않고 전이 의존성에 기댐 → 전이 의존성이 깨지면 ImportError 위험.
 - **해결**: `requirements-deploy.txt`에 `matplotlib` 명시 추가.
 - **커밋**: `2a1a572`
+
+### C-9. 신규 모델(.pt)이 CI/CD로 안 넘어가 진단 탭 크래시
+- **증상**: 배포 서버에서 `FileNotFoundError: /opt/smartfarm_ai/models/tomato_part.pt` → phase2_dl 진단 탭 전체가 죽음.
+- **원인**: CI/CD(`deploy.yml`→서버 `deploy.sh`)는 `git reset --hard origin/main`으로 **git 추적 파일만** 반영. 모델 `.pt`는 `.gitignore`(`*.pt`) 제외라 push해도 서버로 안 감 → 오늘 새로 만든 부위 게이트 모델(`tomato_part.pt`)이 미전송. 게다가 `predict_part`가 파일 부재를 가드하지 않아 하드 크래시.
+- **해결**: ① 코드 — `predict_part`가 `PART_CKPT` 없으면 `leaf`로 폴백(앞단 plant_score 게이트가 비잎 1차 차단) → 앱 비중단. ② 모델 — 수동 배포 스크립트 `deploy/push_models.sh`(rsync `.pt` 3종 + 서비스 재시작) 신설, 배포 문서 rsync에 `tomato_part.pt` 추가.
+- **교훈**: **코드=CD 자동 / 모델=수동 rsync** 로 경로가 갈린다. 모델 바꾸면 `bash deploy/push_models.sh` 필수.
+- **커밋**: `3cdc30f`(가드)·`ca8d727`(스크립트)
 
 ---
 

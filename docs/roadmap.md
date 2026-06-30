@@ -51,13 +51,14 @@
 
 **STEP 2 · 핵심 — 모델 구축 ⭐ (비전 + 시계열)** — `02_core.py`
 - ✅ 2-4 CNN 기초 (Conv·Pooling) — FashionMNIST acc 0.87
-- ✅ 2-5 전이학습 — **여러 백본 비교**(resnet18·mobilenet_v2 둘 다 0.938), 토마토 잎 **3분류**(정상·잎곰팡이·황화잎말이) ⭐
-- ✅ 2-6 **Grad-CAM** (설명가능 AI — 어느 병반을 보고 판단했나) ⭐
+- ✅ 2-5 전이학습 — **백본 비교(MLflow 추적)** mobilenet_v2 0.987·resnet18 0.971, 토마토 잎 **3분류**(정상·잎곰팡이·황화잎말이) · 정상 원천 **잎(area3)만 정제**(train 3,255·val 691) ⭐
+- ✅ 2-6 **Grad-CAM** (설명가능 AI — 어느 병반을 보고 판단했나, 서빙=resnet18 layer4) ⭐
 - ✅ 2-8 LSTM — 환경 **다변량 8변수·485개 시계열**(2022~24 다년) 통합 (MAE 1.18℃ < baseline 1.25℃ · 단년 1.22→다년 1.18 데이터 양 효과)
 
 **STEP 3 · 평가 — 강건화·검증** — `03_eval.py`
-- ✅ 2-7 과적합·불균형·학습안정 (클래스가중치 → 소수 질병 recall 0.2→0.9)
-- ✅ 2-9 평가 심화 (3×3 혼동행렬·ROC/AUC 0.99·오분류 FN 분석)
+- ✅ 2-7 과적합·불균형·학습안정 (클래스가중치 → 질병 recall 0.86/0.93→0.96/0.98)
+- ✅ 2-7b **서빙 강건화** — plant_score(0.04) + **부위 게이트**(과실/꽃/잎/줄기 acc 0.932) 2단 OOD 방어
+- ✅ 2-9 평가 심화 (3×3 혼동행렬·acc 0.97·ROC-AUC 0.997·FN 6건 분석)
 
 **STEP 4 · 데모 — 배포·마무리** — `04_demo.py` · `app/phase2_dl.py`
 - ✅ 2-10 모델 저장(.pt) + Streamlit (사진 업로드 → 진단 + Grad-CAM)
@@ -84,7 +85,7 @@
 |---|---|---|---|
 | **목표** | 환경 → 작물 분류 | 잎 진단 + 환경 예측 | 말로 처방+알림 |
 | **모달리티** | 정형 센서 | + 이미지 | + 언어 |
-| **데이터** | 농진청 스마트팜 현장 농가 | AI Hub 153·PlantVillage·534 | 진단+예측+농사로 RAG |
+| **데이터** | 농진청 스마트팜 현장 농가 | AI Hub 071·PlantVillage·534 | 진단+예측+농사로 RAG |
 | **핵심 기술** | scikit-learn·XGBoost | PyTorch·전이학습·Grad-CAM | Claude API·RAG |
 | **결과물** | 분류 모델(test F1 0.68·GKF 0.49) | 진단 모델(.pt) | 📱 처방 알림 |
 | **배포** | (선택) Streamlit | Streamlit 진단 데모 | 대시보드+알림봇 |
@@ -97,10 +98,10 @@
 ## ✅ 결정됨 (→ [decisions.md](decisions.md))
 - **작물:** 토마토 단일 시작 → 딸기·오이·참외 확장 (ML∩DL 교집합) · ADR-002
 - **Phase 1 데이터:** 농진청 스마트팜 현장 농가 데이터 (옛 노지 Kaggle은 [ml-learn](https://github.com/luma200ok/smartfarm_ml_learn) v1로 분리) · ADR-001
-- **Phase 2 병진단:** PlantVillage(즉시) → AI Hub 153(국내) · ADR-005
+- **Phase 2 병진단:** PlantVillage(즉시) → AI Hub 071(국내) · ADR-005
 - **DL 프레임워크:** PyTorch (MPS) · **알림:** 텔레그램
 
 ## ✅ 다음 액션 (Phase 3 LLM 시작)
-- Phase 2 DL 완료: 3분류(CNN val 0.94)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+다변량 시계열(LSTM MAE 1.18℃<baseline 1.25, 485개 다년) · 수행내역서 `phase2_dl.md`
+- Phase 2 DL 완료: 3분류(서빙 resnet18 acc 0.97·백본 best mobilenet 0.987, MLflow)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+강건화(부위 게이트 0.932)+다변량 시계열(LSTM MAE 1.18℃<baseline 1.25, 485개 다년) · 수행내역서 `phase2_dl.md` · 데모 smartfarm-ai.rkqkdrnportfolio.shop
 1. 청크 3-1(LLM 기초·프롬프트)부터 → `src/llm/`
 2. CNN 진단 + LSTM 예측 + RAG 재배가이드 → 자연어 처방 통합 파이프라인
