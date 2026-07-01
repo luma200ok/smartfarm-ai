@@ -1,38 +1,114 @@
 """
-Phase 3 (LLM) — 플레이스홀더 페이지
+Phase 3 (LLM) — 자연어 처방 페이지 (3-1: Ollama function calling)
 
-아직 미구현. Phase 3 로드맵만 안내(발표 슬라이드 16번과 동일 톤).
-구현 시작 시 이 파일의 render() 를 실제 처방 UI로 채운다.
-멀티페이지: app/streamlit_app.py 가 render() 를 호출.
+잎 사진 → DL 진단(라벨·확률, 근거) + LLM 처방(초보자 눈높이 자연어).
+분업: 진단=DL(resnet18·게이트·YOLO) / 설명·처방=LLM(Ollama qwen2.5:14b).
+멀티페이지: app/streamlit_app.py 가 render() 를 호출(set_page_config 는 엔트리에서 1회).
+
+실행:  streamlit run app/streamlit_app.py   (프로젝트 루트에서)
+전제:  Ollama 데몬 구동 + `ollama pull qwen2.5:14b`
 """
+import sys
+import tempfile
+from pathlib import Path
+
 import streamlit as st
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+SAMPLES = ROOT / "app" / "samples"
+SAMPLE_KR = {"leaf_mold": "🦠 잎곰팡이병", "normal": "🌿 정상", "tylcv": "🦠 황화잎말이바이러스"}
+
+
+def _resolve_image(uploaded, sample_key):
+    """업로드 파일 or 샘플 → 로컬 파일 경로(추론 tool 은 경로를 받는다)."""
+    if uploaded is not None:
+        suffix = Path(uploaded.name).suffix or ".jpg"
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        tmp.write(uploaded.getbuffer())
+        tmp.flush()
+        return tmp.name
+    if sample_key:
+        p = SAMPLES / f"{sample_key}.jpg"
+        return str(p) if p.exists() else None
+    return None
 
 
 def render():
-    st.title("💬 Phase 3 · LLM — 자연어 처방 + 알림")
-    st.info("🚧 준비 중 — Phase 2(DL)까지 완료. 아래는 다음 단계 로드맵입니다.")
+    st.title("💬 Phase 3 · LLM — 자연어 처방")
+    st.caption("DL 진단(라벨·확률)을 받아 로컬 LLM(Ollama · qwen2.5:14b)이 초보자 눈높이 처방으로. "
+               "**진단=DL, 설명·처방=LLM** (LLM은 진단하지 않음).")
 
-    st.markdown("#### 처리 흐름")
-    st.markdown(
-        "> **CNN 진단 + LSTM 예측 + 재배가이드(RAG) → LLM 자연어 처방 → 🔔 알림**"
-    )
+    # Ollama 구동 확인
+    import ollama
+    try:
+        ollama.list()
+    except Exception:
+        st.error("⚠️ Ollama 데몬이 실행 중이 아니에요. Ollama 앱을 켜거나 터미널에서 `ollama serve` 후 "
+                 "`ollama pull qwen2.5:14b` 를 실행해 주세요.")
+        return
 
-    st.markdown("#### 단계")
-    st.markdown(
-        "- **3-1 Ollama(qwen2.5:14b)** — 진단·예측 숫자/라벨 → 자연어 처방 생성\n"
-        "- **3-2 RAG** — 농사로 재배가이드 검색 → 근거 있는 조언\n"
-        "- **3-3 통합 파이프라인** — ML/LSTM 예측 + CNN 진단 + RAG → 처방 통합\n"
-        "- **3-4 알림·대시보드** — 디스코드 Webhook 알림 + Streamlit 통합 대시보드"
-    )
+    st.markdown("#### 1) 잎 사진")
+    c1, c2 = st.columns(2)
+    with c1:
+        uploaded = st.file_uploader("사진 업로드", type=["jpg", "jpeg", "png"])
+    with c2:
+        choice = st.radio("또는 샘플 선택", ["(선택 안 함)", *SAMPLE_KR.keys()],
+                          format_func=lambda k: SAMPLE_KR.get(k, k), horizontal=False)
+    sample_key = choice if choice in SAMPLE_KR else None
 
-    st.markdown("#### 처방 예시 (목표 출력)")
-    st.success(
-        "🔬 잎곰팡이병 의심(87%) — 감염 잎 제거·습도↓  ·  "
-        "💧 토양수분 30% 낮음 — 관수  ·  "
-        "🌡️ 2시간 뒤 32℃ — 환기 준비"
-    )
+    # 미리보기 (경로 만들지 않고 위젯 값으로 바로)
+    if uploaded is not None:
+        st.image(uploaded, caption="입력 잎 사진", width=300)
+    elif sample_key:
+        st.image(str(SAMPLES / f"{sample_key}.jpg"), caption=f"샘플 · {SAMPLE_KR[sample_key]}", width=300)
 
-    st.caption("진행 상황은 레포 `docs/roadmap.md` Phase 3 섹션에서 갱신됩니다.")
+    question = st.text_input("2) 물어볼 말",
+                             value="이 토마토 잎 좀 봐줘. 병이면 어떻게 조치해야 해?")
+
+    has_image = uploaded is not None or sample_key is not None
+    if st.button("💊 처방 받기", type="primary", disabled=not has_image):
+        image_path = _resolve_image(uploaded, sample_key)
+        if not image_path:
+            st.error("이미지를 찾을 수 없어요.")
+            return
+
+        from dl import infer
+        from llm import tools
+        from llm.prescribe import prescribe
+
+        with st.spinner("DL 진단 + LLM 처방 생성 중… (로컬 14B, 20~40초 걸릴 수 있어요)"):
+            diag = tools.get_diagnosis(image_path)
+            presc = prescribe(question, image_path=image_path)
+
+        # ── DL 진단 패널 (근거) ──
+        st.markdown("#### 🔬 DL 진단 (근거)")
+        if diag.get("ood_blocked"):
+            st.warning(f"진단 차단 — {diag.get('reason')}. 병명을 단정하지 않고 재촬영을 안내합니다.")
+        else:
+            st.markdown(f"**진단:** {diag['label_kr']} · **신뢰도:** {diag['prob'] * 100:.0f}%")
+            st.progress(min(max(diag["prob"], 0.0), 1.0))
+            st.caption("클래스별 확률 · " + "  ".join(
+                f"{infer.LABEL_KR[k]} {v * 100:.0f}%" for k, v in diag["probs"].items()))
+
+        # ── LLM 처방 카드 ──
+        st.markdown("#### 💬 LLM 처방")
+        st.success(f"**{presc.진단요약}**")
+        st.markdown(
+            f"- **원인** — {presc.원인}\n"
+            f"- **즉시 조치** — {presc.즉시조치}\n"
+            f"- **예방** — {presc.예방}\n"
+            f"- **재촬영 시점** — {presc.재촬영시점}"
+        )
+        if presc.근거출처:
+            st.caption("근거: " + ", ".join(presc.근거출처))
+        else:
+            st.caption("ℹ️ 근거 출처는 3-2 RAG(농사로 재배가이드) 도입 후 채워집니다.")
+
+    st.divider()
+    st.caption("환각 방어 3종: ① 신뢰도 톤 분기 · ② 게이트 차단 안내 · ③ 클래스 한정성(잎 병해 3종). "
+               "진행 상황 → `docs/roadmap.md` Phase 3.")
 
 
 if __name__ == "__main__":
