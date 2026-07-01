@@ -71,10 +71,10 @@
 > 청크 상세 = `_local/concepts/DL_devlog.md` · 이론 = `DL.md`.
 
 ### Phase 3 — LLM (통합 처방 + 알림) · ⭐⭐⭐ ⚪ 예정
-- ⬜ 3-1 Claude API 연동 (숫자·라벨 → 자연어 처방)
+- ⬜ 3-1 Ollama(qwen2.5:14b) 연동 (숫자·라벨 → 자연어 처방, function calling)
 - ⬜ 3-2 재배지식 RAG (농사로 가이드 검색)
 - ⬜ 3-3 통합 파이프라인 (ML/LSTM 예측 + CNN 진단 + RAG → 처방)
-- ⬜ 3-4 알림봇(텔레그램) + Streamlit 대시보드
+- ⬜ 3-4 알림(디스코드 Webhook) + Streamlit 대시보드
 - 🏁 **Phase 3 끝 = 사진+센서 → 자연어 처방 + 알림**
 
 ---
@@ -86,7 +86,7 @@
 | **목표** | 환경 → 작물 분류 | 잎 진단 + 환경 예측 | 말로 처방+알림 |
 | **모달리티** | 정형 센서 | + 이미지 | + 언어 |
 | **데이터** | 농진청 스마트팜 현장 농가 | AI Hub 071·PlantVillage·534 | 진단+예측+농사로 RAG |
-| **핵심 기술** | scikit-learn·XGBoost | PyTorch·전이학습·Grad-CAM | Claude API·RAG |
+| **핵심 기술** | scikit-learn·XGBoost | PyTorch·전이학습·Grad-CAM | Ollama(qwen2.5:14b)·RAG |
 | **결과물** | 분류 모델(test F1 0.68·GKF 0.49) | 진단 모델(.pt) | 📱 처방 알림 |
 | **배포** | (선택) Streamlit | Streamlit 진단 데모 | 대시보드+알림봇 |
 
@@ -99,7 +99,7 @@
 - **작물:** 토마토 단일 시작 → 딸기·오이·참외 확장 (ML∩DL 교집합) · ADR-002
 - **Phase 1 데이터:** 농진청 스마트팜 현장 농가 데이터 (옛 노지 Kaggle은 [ml-learn](https://github.com/luma200ok/smartfarm_ml_learn) v1로 분리) · ADR-001
 - **Phase 2 병진단:** PlantVillage(즉시) → AI Hub 071(국내) · ADR-005
-- **DL 프레임워크:** PyTorch (MPS) · **알림:** 텔레그램
+- **DL 프레임워크:** PyTorch (MPS) · **알림:** 디스코드 Webhook
 
 ## ✅ 다음 액션 (Phase 3 LLM 시작)
 - Phase 2 DL 완료: 3분류(서빙 resnet18 acc 0.97·백본 best mobilenet 0.987, MLflow)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+강건화(부위 게이트 0.932)+다변량 시계열(LSTM MAE 1.18℃<baseline 1.25, 485개 다년) · 수행내역서 `phase2_dl.md` · 데모 smartfarm-ai.rkqkdrnportfolio.shop

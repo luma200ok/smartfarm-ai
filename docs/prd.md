@@ -130,7 +130,7 @@
 > **핵심:** LLM은 진단을 "하지" 않는다. Phase 1·2 결과를 받아 **원인·조치를 사람 말로** 안내한다.
 - **재료:** 환경 예측(ML/DL-시계열) + 병 진단(DL-비전) + 재배 가이드(RAG)
 - **동작:** 센서·사진 입력 → 예측+진단 → LLM에 전달 → 자연어 처방 생성 → 화면/알림
-- **기술:** Claude API(function calling) + 재배가이드 RAG(농사로) + 알림봇(텔레그램/Discord)
+- **기술:** Ollama 로컬 LLM(qwen2.5:14b, function calling) + 재배가이드 RAG(농사로) + 알림(디스코드 Webhook)
 - **📊 발표:** 아키텍처 다이어그램 + 실제 처방 데모 영상/스크린샷 (5장)
 - **🚀 배포:** Streamlit 대시보드(환경·진단·처방 한 화면) + 알림봇 실서비스
 - **산출물:** 코드 + 발표자료 + Streamlit 대시보드 + 작동하는 알림봇
@@ -146,8 +146,8 @@
 | 시각화 | matplotlib, seaborn |
 | DL-시계열 | PyTorch 또는 TensorFlow/Keras (LSTM) |
 | DL-비전 | PyTorch + torchvision (CNN/전이학습) |
-| LLM | Claude API (function calling) + RAG |
-| 알림 | 텔레그램 봇 또는 Discord 웹훅 |
+| LLM | Ollama 로컬 (qwen2.5:14b, function calling) + RAG |
+| 알림 | 디스코드 Webhook (기존 smartfarm 웹훅 재사용) + (선택) 대화형 봇 |
 | **배포** | **Streamlit** (전 단계 통일) → Streamlit Community Cloud(무료) or OCI 서버 |
 | 실험추적 | MLflow (Phase2 백본 비교) |
 | **발표** | 마크다운→슬라이드(Marp) or 주피터 노트북, 단계별 5장 |
@@ -179,7 +179,7 @@
 - [x] **본 구현은 새 레포에서 진행** — 스마트팜 **토마토 단일 → 다작물 확장** 아키텍처. (→ [ADR-003](decisions.md))
 - [x] **대상 작물: 토마토 시작** (PlantVillage 즉시 + AI Hub 한국 데이터) → 전이학습으로 작물 확장. (→ [ADR-002](decisions.md))
 - [x] **DL 프레임워크: PyTorch** (비전 친화) — 확정·구현 완료
-- [x] **알림 수단: 텔레그램** (Phase3)
+- [x] **알림 수단: 디스코드 Webhook** (Phase3 · 변경: 텔레그램→디스코드 — 기존 자바 smartfarm 프로젝트 웹훅 재사용, 대화형 필요 시 새 봇)
 - [x] **시계열 데이터: 농진청 실데이터로 확정** — 가상 시뮬레이션 불필요(실데이터로 LSTM 학습 완료, MAE 1.18℃)
 - [x] **비전 데이터: AI Hub 071 시설작물 질병진단** — PlantVillage·153 대신 071 토마토로 확정·구현
   > Phase 1·2 결정은 모두 구현 완료. Phase 3(LLM/RAG/알림)는 착수 시 재확인.

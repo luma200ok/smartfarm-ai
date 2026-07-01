@@ -20,7 +20,7 @@ torch>=2.2
 torchvision>=0.17
 ultralytics>=8.3        # YOLOv8 병해 잎 위치 검출 (src/dl/05_detect.py · 청크 2-11)
 
-# --- Phase 3 — LLM (새 세션에서 주석 해제) ---
-# anthropic
-# python-dotenv
+# --- Phase 3 — LLM (Ollama 로컬 구동: qwen2.5:14b) ---
+ollama              # Ollama Python 클라이언트 (로컬 데몬 http://localhost:11434 호출)
+python-dotenv       # 텔레그램 봇 토큰 등 시크릿 로딩(.env)
 mlflow>=2.9
