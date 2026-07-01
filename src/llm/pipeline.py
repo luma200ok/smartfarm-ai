@@ -55,9 +55,9 @@ def _forecast_text(fc: dict | None) -> str:
             f"최근 습도 평균 {fc['humidity_mean']}% → 습도위험 '{fc['humidity_risk']}'")
 
 
-def daily_coach() -> Coach:
-    """A — 평상시 일일 코치. 환경 예측 기반 '오늘 할 일'."""
-    fc = get_forecast()
+def daily_coach(window=None) -> Coach:
+    """A — 평상시 일일 코치. 환경 예측 기반 '오늘 할 일'. window 명시 시 그 시점 기준(가상 센서)."""
+    fc = get_forecast(window)
     msg = [{"role": "system", "content": COACH_SYSTEM},
            {"role": "user", "content": f"오늘의 토마토 재배 코칭을 해줘.\n환경 예측: {_forecast_text(fc)}"}]
     resp = ollama.chat(model=MODEL, messages=msg, format=Coach.model_json_schema())
@@ -68,9 +68,9 @@ def daily_coach() -> Coach:
         return Coach(요약="코칭 생성 실패", 오늘_할일=[], 근거="-")
 
 
-def early_warning() -> Warning:
-    """B — 조기 경보. 습도위험 높으면 잎곰팡이병 위험 경보(+RAG 근거)."""
-    fc = get_forecast()
+def early_warning(window=None) -> Warning:
+    """B — 조기 경보. 습도위험 높으면 잎곰팡이병 위험 경보(+RAG 근거). window 명시 시 그 시점 기준."""
+    fc = get_forecast(window)
     if not fc or fc.get("unavailable"):
         return Warning(경보수준="정상", 위험병해="없음",
                        이유="환경 예측 데이터가 없어 판단 불가", 권장조치="센서/모델 연동 후 재확인")

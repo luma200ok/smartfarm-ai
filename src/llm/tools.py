@@ -67,10 +67,14 @@ def get_detection(image_path: str) -> dict:
     return {"ood_blocked": False, "boxes": boxes, "lesion_count": len(boxes)}
 
 
-def get_forecast() -> dict:
-    """LSTM 환경 예측 — 다음날 내부온도·추세 + 최근 7일 습도위험. 실패 시 unavailable(예외 전파 안 함)."""
+def get_forecast(window=None) -> dict:
+    """LSTM 환경 예측 — 다음날 내부온도·추세 + 최근 7일 습도위험. 실패 시 unavailable(예외 전파 안 함).
+
+    window 를 명시하면(가상 센서 등) 그 창으로, 없으면 CSV 고정 대표 창으로 예측.
+    """
     try:
-        window = infer.latest_window()
+        if window is None:
+            window = infer.latest_window()
         if window is None:
             return {"unavailable": True, "reason": "환경 데이터(env_daily.csv) 없음"}
         fc = infer.forecast(window)

@@ -51,3 +51,15 @@ def test_get_forecast_structure(monkeypatch):
 def test_get_forecast_unavailable_without_data(monkeypatch):
     monkeypatch.setattr(tools.infer, "latest_window", lambda: None)
     assert tools.get_forecast()["unavailable"] is True
+
+
+def test_get_forecast_uses_explicit_window(monkeypatch):
+    """window 명시(가상 센서) 시 latest_window를 거치지 않고 그 창으로 예측."""
+    import numpy as np
+    monkeypatch.setattr(tools.infer, "latest_window",
+                        lambda: (_ for _ in ()).throw(AssertionError("latest_window 호출되면 안 됨")))
+    monkeypatch.setattr(tools.infer, "forecast",
+                        lambda w: {"next_temp": 22.0, "trend": "하강", "humidity_risk": "높음",
+                                   "recent_temp": 24.0, "humidity_mean": 88.0})
+    r = tools.get_forecast(np.zeros((7, 8), dtype="float32"))
+    assert r["next_temp"] == 22.0 and r["humidity_risk"] == "높음"

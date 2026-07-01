@@ -108,42 +108,70 @@ def render():
         else:
             st.caption("ℹ️ 이 진단에 대한 재배가이드 근거를 찾지 못했어요.")
 
-    # ── A·B: 환경 예측 기반 일일 코치 · 조기 경보 (3-3) ──
+    # ── 가상 센서 · 환경 예측 · 코치 · 경보 (3-3) ──
     st.divider()
-    st.subheader("🌡️ 환경 예측 기반 (LSTM)")
+    st.subheader("🌡️ 가상 센서 · 환경 예측 (LSTM · 특정 연도 재생)")
+    st.caption("실 센서 대신 특정 연도 토마토 온실 실데이터를 하루씩 재생 → 최근 7일로 다음날 예측.")
 
-    @st.cache_data(ttl=600)
-    def _forecast_summary():
-        from llm.tools import get_forecast
-        return get_forecast()
+    from dl import infer
 
-    fc = _forecast_summary()
-    if fc and not fc.get("unavailable"):
-        st.markdown(f"**다음날 내부온도** {fc['next_temp']}℃ ({fc['trend']}) · "
-                    f"**습도위험** {fc['humidity_risk']} (최근 평균 {fc['humidity_mean']}%)")
+    @st.cache_data(ttl=3600)
+    def _years():
+        from sim.virtual_sensor import available_years
+        return available_years()
+
+    years = _years()
+    if not years:
+        st.caption("환경 데이터(env_daily.csv)·LSTM 없음 — 가상 센서 비활성")
     else:
-        st.caption("환경 예측 비활성 — `python src/dl/train_lstm.py`로 LSTM 학습 필요")
+        from sim.virtual_sensor import VirtualSensor
+        ycol, bcol = st.columns([2, 1])
+        with ycol:
+            year = st.selectbox("재생 작기(연도 라벨)", years, index=len(years) - 1,
+                                help="env_daily.csv의 '연도'는 작기 라벨 — 데이터가 해를 넘길 수 있음")
+        vs = st.session_state.get("vsensor")
+        if vs is None or vs.year != year:
+            try:
+                vs = VirtualSensor(year)
+                st.session_state["vsensor"] = vs
+            except ValueError as e:                 # 그 작기에 7일↑ 시계열 없음
+                st.warning(f"이 작기는 재생할 수 없어요: {e}")
+                vs = None
+        if vs is not None:
+            with bcol:
+                st.write("")
+                if st.button("다음 날 ▶", use_container_width=True):
+                    vs.tick()
 
-    cc1, cc2 = st.columns(2)
-    with cc1:
-        if st.button("🌅 오늘의 코치", use_container_width=True):
-            from llm import pipeline
-            with st.spinner("코칭 생성 중…"):
-                coach = pipeline.daily_coach()
-            st.success(coach.요약)
-            for todo in coach.오늘_할일:
-                st.markdown(f"- {todo}")
-            st.caption(f"근거: {coach.근거}")
-    with cc2:
-        if st.button("⚠️ 조기 경보", use_container_width=True):
-            from llm import pipeline
-            with st.spinner("경보 판단 중…"):
-                w = pipeline.early_warning()
-            box = {"경고": st.error, "주의": st.warning}.get(w.경보수준, st.info)
-            box(f"경보수준: {w.경보수준}" + (f" · 위험병해: {w.위험병해}" if w.위험병해 and w.위험병해 != "없음" else ""))
-            st.markdown(f"- **이유** — {w.이유}")
-            if w.권장조치:
-                st.markdown(f"- **권장조치** — {w.권장조치}")
+            live = vs.window()                       # 이 시점 창을 코치·경보에 명시 전달(전역 상태 X)
+            r = vs.reading()
+            st.markdown(f"📅 **{vs.date()}** · 내부 {r['온도내부_평균']:.1f}℃ · 습도 {r['습도내부_평균']:.0f}% "
+                        f"· CO₂ {r['co2_평균']:.0f} · 외부 {r['온도외부_평균']:.1f}℃")
+            fc = infer.forecast(live)
+            if fc:
+                st.markdown(f"**→ 다음날 예측** {fc['next_temp']}℃ ({fc['trend']}) · "
+                            f"**습도위험** {fc['humidity_risk']} (최근 7일 평균 {fc['humidity_mean']}%)")
+
+            cc1, cc2 = st.columns(2)
+            with cc1:
+                if st.button("🌅 오늘의 코치", use_container_width=True):
+                    from llm import pipeline
+                    with st.spinner("코칭 생성 중…"):
+                        coach = pipeline.daily_coach(live)
+                    st.success(coach.요약)
+                    for todo in coach.오늘_할일:
+                        st.markdown(f"- {todo}")
+                    st.caption(f"근거: {coach.근거}")
+            with cc2:
+                if st.button("⚠️ 조기 경보", use_container_width=True):
+                    from llm import pipeline
+                    with st.spinner("경보 판단 중…"):
+                        w = pipeline.early_warning(live)
+                    box = {"경고": st.error, "주의": st.warning}.get(w.경보수준, st.info)
+                    box(f"경보수준: {w.경보수준}" + (f" · 위험병해: {w.위험병해}" if w.위험병해 and w.위험병해 != "없음" else ""))
+                    st.markdown(f"- **이유** — {w.이유}")
+                    if w.권장조치:
+                        st.markdown(f"- **권장조치** — {w.권장조치}")
 
     st.divider()
     st.caption("환각 방어 3종: ① 신뢰도 톤 분기 · ② 게이트 차단 안내 · ③ 클래스 한정성(잎 병해 3종). "
