@@ -13,6 +13,7 @@ AI Hub data/tomato 에 섞는다. head 만 학습하는 freeze 전략이라도 P
   Tomato___healthy                        → normal
   Tomato___Leaf_Mold                      → leaf_mold
   Tomato___Tomato_Yellow_Leaf_Curl_Virus  → tylcv
+  Tomato___Late_blight                    → late_blight   (071 미포함, PV 전용)
 
 저장: 256px(AI Hub 가공과 동일) · 파일 prefix `pv_`(출처 구분·예시 holdout 추적)
   data/tomato/train/{cls}/pv_*.jpg   (클래스당 --per-class, 기본 300)
@@ -47,16 +48,28 @@ PV_MAP = {
     "Tomato___healthy": "normal",
     "Tomato___Leaf_Mold": "leaf_mold",
     "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "tylcv",
+    "Tomato___Late_blight": "late_blight",   # 071 미포함 → PlantVillage에서만 확보
 }
 random.seed(42)
 
 
-def _list_files(folder):
-    """GitHub API 로 폴더 내 이미지의 (name, download_url) 목록."""
+def _list_files(folder, retries=4):
+    """GitHub API 로 폴더 내 이미지의 (name, download_url) 목록.
+
+    late_blight 등 파일이 많은 폴더는 목록 응답이 커서 전송 중 끊길(IncompleteRead) 수 있어
+    본문을 한 번에 읽고 실패 시 재시도한다."""
     req = urllib.request.Request(API.format(folder=folder),
                                  headers={"User-Agent": "smartfarm-prepare"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        data = json.load(r)
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                data = json.loads(r.read())      # read() 로 본문 완독 후 파싱
+            break
+        except Exception as e:
+            if attempt == retries - 1:
+                raise
+            print(f"      ⚠️ 목록 조회 재시도 {attempt + 1}/{retries}: {e}")
+            time.sleep(2 * (attempt + 1))
     return [(x["name"], x["download_url"]) for x in data
             if x["name"].lower().endswith((".jpg", ".jpeg", ".png"))]
 
@@ -79,10 +92,18 @@ def main():
     ap = argparse.ArgumentParser(description="PlantVillage(CC0) 토마토 3클래스 → data/tomato 혼합")
     ap.add_argument("--per-class", type=int, default=300, help="클래스당 train 장수(기본 300)")
     ap.add_argument("--val", type=int, default=30, help="클래스당 val(holdout) 장수(기본 30)")
+    ap.add_argument("--only", default=None,
+                    help="특정 진단 클래스만 받기(예: late_blight). 기존 클래스 재다운로드 방지")
     args = ap.parse_args()
 
+    targets = PV_MAP.items()
+    if args.only:
+        targets = [(f, c) for f, c in PV_MAP.items() if c == args.only]
+        if not targets:
+            raise SystemExit(f"--only {args.only}: PV_MAP에 없는 클래스")
+
     grand = 0
-    for folder, cls in PV_MAP.items():
+    for folder, cls in targets:
         need = args.per_class + args.val
         print(f"\n[{cls}] ← PlantVillage/{folder}  (목표 train {args.per_class} / val {args.val})")
         files = _list_files(folder)
