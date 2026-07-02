@@ -19,7 +19,8 @@
 | 3-3 통합 | `src/dl/infer.py`(forecast)·`src/dl/train_lstm.py`·`src/llm/pipeline.py`·`src/sim/virtual_sensor.py` | LSTM 환경예측(토마토 전용, MAE 1.11℃) + 시간축 처방 + 일일코치·조기경보 + 가상센서 재생 |
 | 3-4 알림 | `src/llm/notify.py` | 경보·처방 디스코드 Webhook 발송(수동 버튼, 앱) |
 | ➕ 자동감시 | `src/llm/monitor.py` | 규칙 임계값(습도·온도) 위험 시 디스코드 **자동** 알림(중복방지) |
-| ➕ 날씨 | `src/llm/weather.py`·`tools.py`(get_weather)·`pipeline.py`(weather_qa) | 기상청 단기예보 API — 외기 실황·3일 예보 + 날씨 Q&A(앱 외부날씨 섹션). PR #9, 이슈 #6 1단계 |
+| ➕ 날씨 | `src/llm/weather.py`·`tools.py`(get_weather)·`pipeline.py`(weather_qa) | 기상청 단기예보 API — 외기 실황·3일 예보 + 날씨 Q&A(앱 외부날씨 섹션). PR #9·#11, 이슈 #6 1단계 |
+| ➕ 기대값 | `src/ml/train_expect.py`·`src/llm/expect.py`·`monitor.py`(cause·equip_anom·feedforward)·`sim/virtual_sensor.py`(inject) | 외기→실내 기대값 회귀(XGB MAE 1.11/1.44℃) — 원인 구분 경보·조기 감지·사전 경보·시나리오 데모. PR #12·#13, 이슈 #6 완결(+#2 흡수) |
 
 앱: `streamlit run app/streamlit_app.py` → Phase 1/2/3 멀티페이지. 진단·처방·근거·가상센서·코치·경보·전송 버튼.
 
@@ -36,9 +37,9 @@
 | DB(선택) | PostgreSQL16+pgvector — `RAG_BACKEND=pgvector`·`DATABASE_URL` 설정 시만 사용(기본은 `memory`, npz+무이력 그대로). RAG 검색 저장 + 처방/경보 이력. 미설정·장애 시 자동 폴백 |
 
 ## 📌 다음 작업 (백로그 — roadmap "향후 확장" 참조)
-- [x] **날씨 인지 1단계**(이슈 #6): 기상청 API + get_weather + 날씨 Q&A + 앱 외기 데모 (PR #9)
-- [ ] 날씨 인지 2단계(이슈 #6): 내부·외부 쌍 데이터 축적 — 가상센서 외기 시뮬레이션 데모
-- [ ] 날씨 인지 3단계(이슈 #6): 외기→실내 회귀 + monitor 사전 경보 + 습도 경보 disease 라우팅 정합(#2 흡수)
+- [x] **날씨 인지 1단계**(이슈 #6): 기상청 API + get_weather + 날씨 Q&A + 앱 외기 데모 (PR #9·#11)
+- [x] **날씨 인지 2·3단계 통합**(이슈 #6 클로즈): 외기→실내 기대값 회귀 + 원인 구분·equip_anom·feedforward + 시나리오 데모 + diseases 병해군(#2 흡수) (PR #12·#13)
+- [ ] Streamlit 앱 전면 정리 (이슈 #10 — phase3_llm.py 분리·문구·오류 표시 통일, +PR #11 P2 후속)
 - [x] **진단 병해 클래스 확장 1차**(전이학습): 잎마름역병(late_blight) 추가 → **4분류**(PV 898/100장 혼합, resnet18 acc 0.96·late_blight f1 0.95) + RAG 코퍼스 `late_blight.md`. (PR #3)
 - [ ] 진단 병해 클래스 확장 2차: 흰가루·잿빛(데이터 수집 필요).
 - [ ] 실센서/스프링 서버 sensor API를 `monitor.py`·가상센서 소스로 어댑터 연결
@@ -47,6 +48,7 @@
 - [ ] (3-1 리뷰 이월) 처방 사후 클래스 검증 · CI에 pytest 편입(모델 아티팩트 필요) · PART_CLASSES↔json 드리프트
 
 ## ⚠️ 알려진 이슈 / 주의
+- **macOS 로컬**: torch+xgboost(env_expect_reg.pkl) 동시 로드 시 libomp 세그폴트 — `OMP_NUM_THREADS=1 python …`으로 실행. OCI 서버는 재현 안 됨(스모크 통과).
 - monitor.py·앱 전송 버튼은 **실제 디스코드로 발송**됨(웹훅 설정 상태) — 데모/테스트 시 유의.
 - forecast는 **과거 데이터 재생(replay)** 데모 — 실시간 아님(실센서 미연동). 가상센서가 대표 토마토 농가 1개 시계열 사용.
 - 스프링 `smartfarm_server`는 **별개 프로젝트**(백엔드/IoT) — smartfarm_ai와 결합 X, 웹훅만 공유.
