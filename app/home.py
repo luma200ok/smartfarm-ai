@@ -74,12 +74,12 @@ def render():
         h, b = st.columns([0.75, 0.25])
         h.subheader("🍃 Phase 2 · DL — 잎 병해 진단 + 위치 검출 + 환경 시계열")
         b.success("✅ 완료")
-        st.caption("AI Hub 071 토마토 잎 3분류(정상·잎곰팡이병·황화잎말이) · 전이학습 · 설명가능 AI")
+        st.caption("AI Hub 071 + PlantVillage 토마토 잎 4분류(정상·잎곰팡이병·황화잎말이·잎마름역병) · 전이학습 · 설명가능 AI")
 
         left, right = st.columns([0.52, 0.48])
         with left:
             k1, k2, k3 = st.columns(3)
-            k1.metric("3분류 acc", "0.97", help="ROC-AUC 0.997")
+            k1.metric("4분류 acc", "0.96", help="ROC-AUC 0.997 · 잎마름역병 포함")
             k2.metric("YOLO mAP@50", "0.78")
             k3.metric("부위 게이트", "0.932")
             st.markdown(

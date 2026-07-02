@@ -92,7 +92,7 @@ TOOL_SCHEMAS = [
         "function": {
             "name": "get_diagnosis",
             "description": "토마토 잎 사진을 진단한다. 잎이 아니면(과실·꽃·줄기·비식물) 진단 대신 차단 사유를 돌려준다. "
-                           "진단 클래스는 잎곰팡이병(leaf_mold)·정상(normal)·황화잎말이바이러스(tylcv) 3종뿐.",
+                           "진단 클래스는 잎마름역병(late_blight)·잎곰팡이병(leaf_mold)·정상(normal)·황화잎말이바이러스(tylcv) 4종뿐.",
             "parameters": {
                 "type": "object",
                 "properties": {

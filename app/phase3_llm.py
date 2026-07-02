@@ -18,7 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 SAMPLES = ROOT / "app" / "samples"
-SAMPLE_KR = {"leaf_mold": "🦠 잎곰팡이병", "normal": "🌿 정상", "tylcv": "🦠 황화잎말이바이러스"}
+SAMPLE_KR = {"late_blight": "🦠 잎마름역병", "leaf_mold": "🦠 잎곰팡이병",
+             "normal": "🌿 정상", "tylcv": "🦠 황화잎말이바이러스"}
 
 
 def _resolve_image(uploaded, sample_key):
@@ -187,7 +188,7 @@ def render():
                     (st.success if ok else st.warning)(msg)
 
     st.divider()
-    st.caption("환각 방어 3종: ① 신뢰도 톤 분기 · ② 게이트 차단 안내 · ③ 클래스 한정성(잎 병해 3종). "
+    st.caption("환각 방어 3종: ① 신뢰도 톤 분기 · ② 게이트 차단 안내 · ③ 클래스 한정성(잎 병해 4종). "
                "진행 상황 → `docs/roadmap.md` Phase 3.")
 
 
