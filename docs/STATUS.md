@@ -8,7 +8,7 @@
 | Phase | 내용 | 상태 | 핵심 성과 |
 |---|---|---|---|
 | 1 ML | 환경센서 → 작물 분류 | ✅ | test F1 0.68 · GKF 0.49(누수 교훈) |
-| 2 DL | 잎 진단(CNN·YOLO) + LSTM | ✅ | 진단 acc 0.97 · YOLO mAP@50 0.78 · LSTM |
+| 2 DL | 잎 진단(CNN·YOLO) + LSTM | ✅ | 진단 4분류 acc 0.96 · YOLO mAP@50 0.78 · LSTM |
 | 3 LLM | 처방·RAG·통합·알림 | ✅ | 아래 표 |
 
 ## 🧩 Phase 3 구성 (파일 맵)
@@ -33,7 +33,8 @@
 | 배포 | OCI(공용서버) — `docs/_local/deploy/oci-deployment.md` 참조 |
 
 ## 📌 다음 작업 (백로그 — roadmap "향후 확장" 참조)
-- [ ] **진단 병해 클래스 확장**(전이학습): 잎마름역병(PlantVillage 데이터 있음)부터 → 흰가루·잿빛(데이터 수집). 진단 클래스+RAG 코퍼스 세트 확장.
+- [x] **진단 병해 클래스 확장 1차**(전이학습): 잎마름역병(late_blight) 추가 → **4분류**(PV 898/100장 혼합, resnet18 acc 0.96·late_blight f1 0.95) + RAG 코퍼스 `late_blight.md`. (PR #3)
+- [ ] 진단 병해 클래스 확장 2차: 흰가루·잿빛(데이터 수집 필요).
 - [ ] 실센서/스프링 서버 sensor API를 `monitor.py`·가상센서 소스로 어댑터 연결
 - [ ] 농사로 OpenAPI 로더(수기 코퍼스 대체) · normal 코퍼스 실자료화
 - [ ] 대화형 Q&A 디스코드 봇(Webhook과 별개) · monitor cron 상주·쿨다운 정책

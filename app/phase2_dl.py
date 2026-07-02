@@ -23,17 +23,17 @@ CKPT = ROOT / "models" / "tomato_resnet18.pt"
 PART_CKPT = ROOT / "models" / "tomato_part.pt"   # 부위 분류기(과실/꽃/잎/줄기) — 잎 진단 게이트
 YOLO_CKPT = ROOT / "models" / "tomato_yolov8n.pt"
 SAMPLE_DIR = ROOT / "app" / "samples"            # 예시 사진(사진 없는 외부 체험용)
-SAMPLE_CLASSES = ["normal", "leaf_mold", "tylcv"]
+SAMPLE_CLASSES = ["normal", "leaf_mold", "tylcv", "late_blight"]
 
 device = "mps" if torch.backends.mps.is_available() else "cpu"
-CLASSES = ["leaf_mold", "normal", "tylcv"]       # ImageFolder 알파벳순(학습과 동일)
-LABEL_KR = {"leaf_mold": "🦠 잎곰팡이병", "normal": "🌿 정상",
-            "tylcv": "🦠 황화잎말이바이러스"}
+CLASSES = ["late_blight", "leaf_mold", "normal", "tylcv"]   # ImageFolder 알파벳순(학습과 동일)
+LABEL_KR = {"late_blight": "🦠 잎마름역병", "leaf_mold": "🦠 잎곰팡이병",
+            "normal": "🌿 정상", "tylcv": "🦠 황화잎말이바이러스"}
 PART_CLASSES = ["flower", "fruit", "leaf", "stem"]   # 부위 분류기 학습 순서(ImageFolder 알파벳순)
 PART_KR = {"flower": "🌼 꽃", "fruit": "🍅 과실(열매)", "leaf": "🌿 잎", "stem": "🌱 줄기"}
-# OOD 게이트: 닫힌 3-클래스 분류기는 잎이 아닌 이미지도 한 클래스로 찍는다.
+# OOD 게이트: 닫힌 4-클래스 분류기는 잎이 아닌 이미지도 한 클래스로 찍는다.
 # → 진단 전에 "토마토 잎인가"를 ImageNet 사전학습 분류기로 판별(식물·잎·채소 클래스 softmax 합).
-#   우리 3-클래스 모델의 logit/feature 로는 잎·OOD 가 겹쳐(실측 ~17%) 못 가르므로, 1000클래스 지식을 빌린다.
+#   우리 4-클래스 모델의 logit/feature 로는 잎·OOD 가 겹쳐(실측 ~17%) 못 가르므로, 1000클래스 지식을 빌린다.
 #   추가 학습·설치 없음(torchvision 사전학습 가중치 재사용). 실측: 합성 OOD 100% 차단·진짜 잎 오차단 ~4%.
 PLANT_THRESHOLD = 0.04                             # 식물 클래스 확률 합이 이 값 미만이면 "잎 아님"으로 차단
 # ImageNet 1000클래스 중 잎·식물·채소·과일 관련(토마토 잎은 ImageNet에 없어 인접 녹색식물로 잡힘)

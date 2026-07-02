@@ -16,7 +16,7 @@ from torchvision import models, transforms
 
 ROOT = Path("/Users/jeongjaebong/IntelliJ/mycode/toy_project/solo/smartfarm_ai")
 CKPT = ROOT / "models" / "tomato_resnet18.pt"
-CLASSES = ["leaf_mold", "normal", "tylcv"]            # ImageFolder 알파벳순
+CLASSES = ["late_blight", "leaf_mold", "normal", "tylcv"]   # ImageFolder 알파벳순
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
 device = "mps" if torch.backends.mps.is_available() else "cpu"
@@ -63,8 +63,9 @@ def main():
                 hit, n = r
                 print(f"   {cls:10s} 정답률 {hit/n*100:5.1f}%  ({hit}/{n})")
 
-    print("\n[app/samples 데모 예시 3장]")
-    for name, true_cls in [("normal", "normal"), ("leaf_mold", "leaf_mold"), ("tylcv", "tylcv")]:
+    print("\n[app/samples 데모 예시]")
+    for name, true_cls in [("normal", "normal"), ("leaf_mold", "leaf_mold"),
+                           ("tylcv", "tylcv"), ("late_blight", "late_blight")]:
         p = ROOT / "app/samples" / f"{name}.jpg"
         if p.exists():
             pred, probs = predict(m, p)

@@ -39,10 +39,10 @@ def assess(reading: dict) -> list[dict]:
     out = []
     if hum >= HUM_CRIT:
         out.append({"key": "humidity", "level": "경고", "disease": "leaf_mold",
-                    "reason": f"고습({hum:.0f}%≥{HUM_CRIT:.0f}) — 잎곰팡이병 급속 확산 위험"})
+                    "reason": f"고습({hum:.0f}%≥{HUM_CRIT:.0f}) — 잎곰팡이병·잎마름역병 급속 확산 위험"})
     elif hum >= HUM_WARN:
         out.append({"key": "humidity", "level": "주의", "disease": "leaf_mold",
-                    "reason": f"습도 높음({hum:.0f}%≥{HUM_WARN:.0f}) — 곰팡이 주의, 환기 권장"})
+                    "reason": f"습도 높음({hum:.0f}%≥{HUM_WARN:.0f}) — 곰팡이·역병 주의, 환기 권장"})
     if temp >= TEMP_HOT:
         out.append({"key": "temp_hot", "level": "경고", "disease": "",
                     "reason": f"고온({temp:.0f}℃≥{TEMP_HOT:.0f}) — 착과·생육 장해 위험"})

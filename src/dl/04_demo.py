@@ -27,13 +27,13 @@ TOMATO = f"{ROOT}/data/tomato"
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 print(f"device = {device}  (torch {torch.__version__})")
 
-CLASSES = ["leaf_mold", "normal", "tylcv"]   # ImageFolder 알파벳순(2-5와 동일, 3분류)
+CLASSES = ["late_blight", "leaf_mold", "normal", "tylcv"]   # ImageFolder 알파벳순(2-5와 동일, 4분류)
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
 
 # ── (공용①) 모델 로드 ──
-def load_resnet18(ckpt, n_classes=3):
+def load_resnet18(ckpt, n_classes=len(CLASSES)):
     """추론용 resnet18 — 사전학습 weight 불필요(우리 학습 가중치를 덮어쓰므로)."""
     from torchvision import models
     m = models.resnet18(weights=None)

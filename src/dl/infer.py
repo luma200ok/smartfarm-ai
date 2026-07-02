@@ -27,9 +27,10 @@ YOLO_CKPT = MODELS / "tomato_yolov8n.pt"
 
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 
-# 진단 3클래스(ImageFolder 알파벳순, 학습과 동일)
-CLASSES = ["leaf_mold", "normal", "tylcv"]
-LABEL_KR = {"leaf_mold": "잎곰팡이병", "normal": "정상", "tylcv": "황화잎말이바이러스"}
+# 진단 4클래스(ImageFolder 알파벳순, 학습과 동일)
+CLASSES = ["late_blight", "leaf_mold", "normal", "tylcv"]
+LABEL_KR = {"late_blight": "잎마름역병", "leaf_mold": "잎곰팡이병",
+            "normal": "정상", "tylcv": "황화잎말이바이러스"}
 # 부위 게이트 4클래스
 PART_CLASSES = ["flower", "fruit", "leaf", "stem"]
 PART_KR = {"flower": "꽃", "fruit": "과실", "leaf": "잎", "stem": "줄기"}

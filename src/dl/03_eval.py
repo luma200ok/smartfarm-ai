@@ -197,7 +197,7 @@ def run_chunk_2_9():
             y_pred.extend(prob.argmax(1)); p_dis.extend(1 - prob[:, normal_i]); y_true.extend(yb.numpy())
     y_true, y_pred, p_dis = np.array(y_true), np.array(y_pred), np.array(p_dis)
 
-    print("\n[①] classification report (3분류)")
+    print(f"\n[①] classification report ({len(classes)}분류)")
     print(classification_report(y_true, y_pred, target_names=classes, zero_division=0))
 
     cm = confusion_matrix(y_true, y_pred)
