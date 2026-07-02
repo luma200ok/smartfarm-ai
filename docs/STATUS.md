@@ -19,6 +19,7 @@
 | 3-3 통합 | `src/dl/infer.py`(forecast)·`src/dl/train_lstm.py`·`src/llm/pipeline.py`·`src/sim/virtual_sensor.py` | LSTM 환경예측(토마토 전용, MAE 1.11℃) + 시간축 처방 + 일일코치·조기경보 + 가상센서 재생 |
 | 3-4 알림 | `src/llm/notify.py` | 경보·처방 디스코드 Webhook 발송(수동 버튼, 앱) |
 | ➕ 자동감시 | `src/llm/monitor.py` | 규칙 임계값(습도·온도) 위험 시 디스코드 **자동** 알림(중복방지) |
+| ➕ 날씨 | `src/llm/weather.py`·`tools.py`(get_weather)·`pipeline.py`(weather_qa) | 기상청 단기예보 API — 외기 실황·3일 예보 + 날씨 Q&A(앱 외부날씨 섹션). PR #9, 이슈 #6 1단계 |
 
 앱: `streamlit run app/streamlit_app.py` → Phase 1/2/3 멀티페이지. 진단·처방·근거·가상센서·코치·경보·전송 버튼.
 
@@ -31,9 +32,13 @@
 | 모델(로컬) | `models/*.pt`(gitignore) — `tomato_resnet18/mobilenet_v2/part/yolov8n`, `env_lstm.pt`(+meta json 커밋). `phase1_crop_env_clf.pkl` |
 | 테스트 | `pytest`(통합=실 Ollama·실 PG). `pytest -m "not integration"`으로 모킹만 |
 | 배포 | OCI(공용서버) — `docs/_local/deploy/oci-deployment.md` 참조 |
+| 날씨 API | 기상청 단기예보(공공데이터포털) — `.env`의 `KMA_SERVICE_KEY`(로컬·서버 설정 완료), `FARM_LAT/LON` 미설정 시 서울 기본값. 미설정·장애 시 unavailable graceful |
 | DB(선택) | PostgreSQL16+pgvector — `RAG_BACKEND=pgvector`·`DATABASE_URL` 설정 시만 사용(기본은 `memory`, npz+무이력 그대로). RAG 검색 저장 + 처방/경보 이력. 미설정·장애 시 자동 폴백 |
 
 ## 📌 다음 작업 (백로그 — roadmap "향후 확장" 참조)
+- [x] **날씨 인지 1단계**(이슈 #6): 기상청 API + get_weather + 날씨 Q&A + 앱 외기 데모 (PR #9)
+- [ ] 날씨 인지 2단계(이슈 #6): 내부·외부 쌍 데이터 축적 — 가상센서 외기 시뮬레이션 데모
+- [ ] 날씨 인지 3단계(이슈 #6): 외기→실내 회귀 + monitor 사전 경보 + 습도 경보 disease 라우팅 정합(#2 흡수)
 - [x] **진단 병해 클래스 확장 1차**(전이학습): 잎마름역병(late_blight) 추가 → **4분류**(PV 898/100장 혼합, resnet18 acc 0.96·late_blight f1 0.95) + RAG 코퍼스 `late_blight.md`. (PR #3)
 - [ ] 진단 병해 클래스 확장 2차: 흰가루·잿빛(데이터 수집 필요).
 - [ ] 실센서/스프링 서버 sensor API를 `monitor.py`·가상센서 소스로 어댑터 연결
