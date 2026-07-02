@@ -95,6 +95,7 @@ LLM은 **로컬 Ollama(qwen2.5:14b)** — 비용 0·오프라인. 진단은 ML/D
 - ✅ **3-2 RAG(bge-m3)** — 농사로/NCPMS 재배가이드 검색 → 처방에 **근거 출처 인용**(코드 주입, 환각 배제).
 - ✅ **3-3 통합** — LSTM 환경예측(get_forecast, 다음날 내부온도 MAE 1.11℃) 실연동 → **시간축 처방**(고습 예측 시 환기) + **일일 코치·조기 경보**.
 - ✅ **3-4 알림** — 조기경보·처방을 **디스코드 Webhook**으로 발송(수동 버튼, 기존 smartfarm 웹훅 재사용).
+- ✅ **센서 자동 감시** — `python src/llm/monitor.py --year 2024 --interval 1` : 규칙 임계값(습도≥90·온도≥35/≤5) 위험 시 **자동** 디스코드 알림(중복 방지). `.env`에 `DISCORD_WEBHOOK_URL` 필요.
 
 **실행:** `streamlit run app/streamlit_app.py` → Phase 3 페이지 (Ollama 데몬 + `qwen2.5:14b`·`bge-m3` 필요).
 
