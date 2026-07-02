@@ -2,21 +2,26 @@
 Phase 3 (LLM) — 자연어 처방 페이지 (3-1: Ollama function calling)
 
 잎 사진 → DL 진단(라벨·확률, 근거) + LLM 처방(초보자 눈높이 자연어).
-분업: 진단=DL(resnet18·게이트·YOLO) / 설명·처방=LLM(Ollama qwen2.5:14b).
+분업: 진단=DL(resnet18·게이트·YOLO) / 설명·처방=LLM(Ollama, 모델은 .env OLLAMA_MODEL — 로컬 14b·서버 7b).
 멀티페이지: app/streamlit_app.py 가 render() 를 호출(set_page_config 는 엔트리에서 1회).
 
 실행:  streamlit run app/streamlit_app.py   (프로젝트 루트에서)
-전제:  Ollama 데몬 구동 + `ollama pull qwen2.5:14b`
+전제:  Ollama 데몬 구동 + `ollama pull <OLLAMA_MODEL>` + `ollama pull bge-m3`
 """
+import os
 import sys
 import tempfile
 from pathlib import Path
 
 import streamlit as st
+from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+
+load_dotenv(ROOT / ".env", override=True)
+MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:14b")   # 표시용 — 실제 사용 모델과 같은 소스(.env)
 SAMPLES = ROOT / "app" / "samples"
 SAMPLE_KR = {"late_blight": "🦠 잎마름역병", "leaf_mold": "🦠 잎곰팡이병",
              "normal": "🌿 정상", "tylcv": "🦠 황화잎말이바이러스"}
@@ -38,7 +43,7 @@ def _resolve_image(uploaded, sample_key):
 
 def render():
     st.title("💬 Phase 3 · LLM — 자연어 처방")
-    st.caption("DL 진단(라벨·확률)을 받아 로컬 LLM(Ollama · qwen2.5:14b)이 초보자 눈높이 처방으로. "
+    st.caption(f"DL 진단(라벨·확률)을 받아 LLM(Ollama · {MODEL})이 초보자 눈높이 처방으로. "
                "**진단=DL, 설명·처방=LLM** (LLM은 진단하지 않음).")
 
     # Ollama 구동 확인
@@ -47,7 +52,7 @@ def render():
         ollama.list()
     except Exception:
         st.error("⚠️ Ollama 데몬이 실행 중이 아니에요. Ollama 앱을 켜거나 터미널에서 `ollama serve` 후 "
-                 "`ollama pull qwen2.5:14b` 를 실행해 주세요.")
+                 f"`ollama pull {MODEL}` 을 실행해 주세요.")
         return
 
     st.markdown("#### 1) 잎 사진")
@@ -76,7 +81,7 @@ def render():
         else:
             from llm import tools
             from llm.prescribe import prescribe
-            with st.spinner("DL 진단 + LLM 처방 생성 중… (로컬 14B, 20~40초 걸릴 수 있어요)"):
+            with st.spinner(f"DL 진단 + LLM 처방 생성 중… ({MODEL} — 환경에 따라 수십 초~2분 걸릴 수 있어요)"):
                 st.session_state["last_diag"] = tools.get_diagnosis(image_path)
                 st.session_state["last_presc"] = prescribe(question, image_path=image_path)
 
