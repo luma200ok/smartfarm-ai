@@ -36,44 +36,45 @@ def sync(force: bool = False) -> int:
     if conn is None:
         raise RuntimeError("DATABASE_URL 미설정 — sync 불가")
 
-    chunks = load_chunks()
-    if not chunks:
-        _log.warning("코퍼스가 비어 있음(data/nongsaro/*.md) — 적재할 chunk 없음")
-        return 0
+    with conn:                       # 종료 시 close — connect-per-call이라 누수 방지 필수
+        chunks = load_chunks()
+        if not chunks:
+            _log.warning("코퍼스가 비어 있음(data/nongsaro/*.md) — 적재할 chunk 없음")
+            return 0
 
-    key = _corpus_key(chunks)
-    if not force and _meta_get(conn, "corpus_key") == key:
-        _log.info("코퍼스 변경 없음(key=%s) — sync 스킵", key[:12])
-        return 0
+        key = _corpus_key(chunks)
+        if not force and _meta_get(conn, "corpus_key") == key:
+            _log.info("코퍼스 변경 없음(key=%s) — sync 스킵", key[:12])
+            return 0
 
-    emb = _embed([c["text"] for c in chunks])
+        emb = _embed([c["text"] for c in chunks])
 
-    # G1 픽스: get_conn()이 autocommit=True라 명시 트랜잭션 없으면 INSERT 도중 실패 시
-    # DELETE만 반영되고 테이블이 빈 채로 남을 수 있음 — conn.transaction()으로 원자성 보장.
-    with conn.transaction():
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM rag_chunks")
-            cur.executemany(
-                """
-                INSERT INTO rag_chunks (text, title, source, source_name, disease, embedding)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                """,
-                [(c["text"], c["title"], c["source"], c["source_name"], c["disease"], emb[i])
-                 for i, c in enumerate(chunks)],
-            )
-            cur.execute(
-                """
-                INSERT INTO rag_meta (key, value) VALUES ('corpus_key', %s), ('embed_model', %s)
-                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-                """,
-                (key, EMBED_MODEL),
-            )
-            cur.execute(
-                "INSERT INTO rag_meta (key, value) VALUES ('synced_at', now()::text) "
-                "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value"
-            )
-    _log.info("sync 완료 — %d개 chunk 적재(key=%s)", len(chunks), key[:12])
-    return len(chunks)
+        # G1 픽스: get_conn()이 autocommit=True라 명시 트랜잭션 없으면 INSERT 도중 실패 시
+        # DELETE만 반영되고 테이블이 빈 채로 남을 수 있음 — conn.transaction()으로 원자성 보장.
+        with conn.transaction():
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM rag_chunks")
+                cur.executemany(
+                    """
+                    INSERT INTO rag_chunks (text, title, source, source_name, disease, embedding)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    [(c["text"], c["title"], c["source"], c["source_name"], c["disease"], emb[i])
+                     for i, c in enumerate(chunks)],
+                )
+                cur.execute(
+                    """
+                    INSERT INTO rag_meta (key, value) VALUES ('corpus_key', %s), ('embed_model', %s)
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+                    """,
+                    (key, EMBED_MODEL),
+                )
+                cur.execute(
+                    "INSERT INTO rag_meta (key, value) VALUES ('synced_at', now()::text) "
+                    "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value"
+                )
+        _log.info("sync 완료 — %d개 chunk 적재(key=%s)", len(chunks), key[:12])
+        return len(chunks)
 
 
 if __name__ == "__main__":

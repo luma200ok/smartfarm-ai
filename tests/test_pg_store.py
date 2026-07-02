@@ -32,6 +32,14 @@ class _FakeCursor:
 class _FakeConn:
     def __init__(self, rows):
         self._rows = rows
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):          # psycopg Connection 컨텍스트매니저 — 종료 시 close
+        self.closed = True
+        return False
 
     def cursor(self):
         return _FakeCursor(self._rows)
@@ -66,6 +74,15 @@ def test_search_no_disease_filter(monkeypatch):
     monkeypatch.setattr(pg_store.store, "_embed", lambda texts: np.array([[1.0, 0.0]], dtype="float32"))
     out = pg_store.search("q", disease=None, k=1)
     assert len(out) == 1 and out[0]["text"] == "text1"
+
+
+def test_search_closes_connection(monkeypatch):
+    """connect-per-call — 검색 후 커넥션이 닫혀야 한다(누수 방지, P2 픽스)."""
+    fake = _FakeConn([])
+    monkeypatch.setattr(pg_store.db, "get_conn", lambda: fake)
+    monkeypatch.setattr(pg_store.store, "_embed", lambda texts: np.array([[1.0, 0.0]], dtype="float32"))
+    pg_store.search("q")
+    assert fake.closed is True
 
 
 # ── retrieve() 백엔드 분기 (rag/__init__.py) ────────────────────────────

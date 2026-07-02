@@ -20,13 +20,14 @@ def save_prescription(user_msg: str, image_path: str | None, diag: dict | None, 
         conn = db.get_conn()
         if conn is None:
             return False
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO prescriptions (user_msg, image_path, diag, prescription) "
-                "VALUES (%s, %s, %s, %s)",
-                (user_msg, image_path, Jsonb(diag) if diag is not None else None,
-                 Jsonb(prescription.model_dump())),
-            )
+        with conn:                   # 종료 시 close — connect-per-call이라 누수 방지 필수
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO prescriptions (user_msg, image_path, diag, prescription) "
+                    "VALUES (%s, %s, %s, %s)",
+                    (user_msg, image_path, Jsonb(diag) if diag is not None else None,
+                     Jsonb(prescription.model_dump())),
+                )
         return True
     except Exception as e:
         _log.warning("처방 이력 저장 실패(무시): %s", e)
@@ -39,11 +40,12 @@ def save_alert(kind: str, level: str, disease: str, reason: str, payload: dict) 
         conn = db.get_conn()
         if conn is None:
             return False
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO alerts (kind, level, disease, reason, payload) VALUES (%s, %s, %s, %s, %s)",
-                (kind, level, disease, reason, Jsonb(payload)),
-            )
+        with conn:                   # 종료 시 close
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO alerts (kind, level, disease, reason, payload) VALUES (%s, %s, %s, %s, %s)",
+                    (kind, level, disease, reason, Jsonb(payload)),
+                )
         return True
     except Exception as e:
         _log.warning("경보 이력 저장 실패(무시): %s", e)

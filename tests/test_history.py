@@ -28,6 +28,14 @@ class _FakeCursor:
 class _FakeConn:
     def __init__(self):
         self.inserted = []
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):          # psycopg Connection 컨텍스트매니저 — 종료 시 close
+        self.closed = True
+        return False
 
     def cursor(self):
         return _FakeCursor(self.inserted)
@@ -82,6 +90,18 @@ def test_save_alert_inserts_when_conn_available(monkeypatch):
     assert ok is True
     assert len(conn.inserted) == 1
     assert "INSERT INTO alerts" in conn.inserted[0][0]
+
+
+def test_save_closes_connection(monkeypatch):
+    """connect-per-call — 저장 후 커넥션이 닫혀야 한다(monitor tight loop 누수 방지, P2 픽스)."""
+    conn1, conn2 = _FakeConn(), _FakeConn()
+    monkeypatch.setattr(history.db, "get_conn", lambda: conn1)
+    history.save_prescription("m", None, None, _FakePresc())
+    assert conn1.closed is True
+
+    monkeypatch.setattr(history.db, "get_conn", lambda: conn2)
+    history.save_alert("monitor", "경고", "", "r", {})
+    assert conn2.closed is True
 
 
 # ── prescribe/pipeline/monitor 훅이 기존 흐름을 깨지 않는지 (history mock 호출 assert) ──

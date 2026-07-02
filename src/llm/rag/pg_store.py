@@ -14,30 +14,31 @@ def search(query: str, disease: str | None = None, k: int = 3) -> list[dict]:
     if conn is None:
         return []
     q = store._embed([query])[0]
-    with conn.cursor() as cur:
-        if disease is not None:
-            cur.execute(
-                """
-                SELECT text, title, source, source_name, disease,
-                       1 - (embedding <=> %s) AS score
-                FROM rag_chunks
-                WHERE disease = %s
-                ORDER BY embedding <=> %s
-                LIMIT %s
-                """,
-                (q, disease, q, k),
-            )
-        else:
-            cur.execute(
-                """
-                SELECT text, title, source, source_name, disease,
-                       1 - (embedding <=> %s) AS score
-                FROM rag_chunks
-                ORDER BY embedding <=> %s
-                LIMIT %s
-                """,
-                (q, q, k),
-            )
-        rows = cur.fetchall()
+    with conn:                       # 종료 시 close — connect-per-call이라 누수 방지 필수
+        with conn.cursor() as cur:
+            if disease is not None:
+                cur.execute(
+                    """
+                    SELECT text, title, source, source_name, disease,
+                           1 - (embedding <=> %s) AS score
+                    FROM rag_chunks
+                    WHERE disease = %s
+                    ORDER BY embedding <=> %s
+                    LIMIT %s
+                    """,
+                    (q, disease, q, k),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT text, title, source, source_name, disease,
+                           1 - (embedding <=> %s) AS score
+                    FROM rag_chunks
+                    ORDER BY embedding <=> %s
+                    LIMIT %s
+                    """,
+                    (q, q, k),
+                )
+            rows = cur.fetchall()
     cols = ("text", "title", "source", "source_name", "disease", "score")
     return [dict(zip(cols, row)) for row in rows]
