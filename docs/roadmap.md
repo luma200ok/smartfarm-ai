@@ -103,7 +103,7 @@
 - **DL 프레임워크:** PyTorch (MPS) · **알림:** 디스코드 Webhook
 
 ## ✅ 다음 액션 (Phase 3 LLM 시작)
-- Phase 2 DL 완료: 3분류(서빙 resnet18 acc 0.97·백본 best mobilenet 0.987, MLflow)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+강건화(부위 게이트 0.932)+다변량 시계열(LSTM MAE 1.18℃<baseline 1.25, 485개 다년) · 수행내역서 `phase2_dl.md` · 데모 smartfarm-ai.rkqkdrnportfolio.shop
+- Phase 2 DL 완료: 4분류(서빙 resnet18 acc 0.96·백본 best mobilenet 0.976, MLflow)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+강건화(부위 게이트 0.932)+다변량 시계열(LSTM MAE 1.18℃<baseline 1.25, 485개 다년) · 수행내역서 `phase2_dl.md` · 데모 smartfarm-ai.rkqkdrnportfolio.shop
 1. 청크 3-1(LLM 기초·프롬프트)부터 → `src/llm/`
 2. CNN 진단 + LSTM 예측 + RAG 재배가이드 → 자연어 처방 통합 파이프라인
 
@@ -111,10 +111,9 @@
 
 ## 🔮 향후 확장 백로그 (기능 구현 후, 전이학습식 점진 확장)
 
-### ⭐ 진단 병해 클래스 확장 (Phase 2 재학습 — 최우선 확장)
-현재 진단 모델은 **3종(잎곰팡이병·정상·황화잎말이)**만 구분. 농사로 곰팡이병 큐레이션엔 4종이 있으나 나머지는 학습 데이터가 없어 진단 불가.
+### ⭐ 진단 병해 클래스 확장 (Phase 2 재학습 — 점진 확장)
 **확장 = 이미지 데이터 확보 → CNN 재학습 → 재평가 → 부위/OOD 게이트·클래스한정 프롬프트·RAG 코퍼스 동반 갱신** (진단 클래스와 RAG는 반드시 세트로 확장).
-- **잎마름역병(late blight):** ✅ PlantVillage(CC0)에 데이터 있음 → **가장 먼저 추가 가능**
+- **잎마름역병(late blight):** ✅ **완료(PR #3)** — PlantVillage(CC0) 898/100장 혼합 → **4분류** 재학습(resnet18 acc 0.96·late_blight f1 0.95, 기존 3클래스 회귀 없음) + RAG `late_blight.md` + 앱/프롬프트/샘플 동반 갱신
 - **흰가루병(powdery mildew)·잿빛곰팡이병(gray mold):** ❌ PlantVillage에 없음 → 별도 데이터셋 수집 선행 필요
 - 다작물 확장(딸기·오이·참외)도 같은 전이학습 패턴.
 
