@@ -82,7 +82,7 @@
 
 ## 📅 Phase별 데이터·기술 요약
 
-| | Phase 1 (ML) ✅ | Phase 2 (DL) ✅ | Phase 3 (LLM) ▶ |
+| | Phase 1 (ML) ✅ | Phase 2 (DL) ✅ | Phase 3 (LLM) ✅ |
 |---|---|---|---|
 | **목표** | 환경 → 작물 분류 | 잎 진단 + 환경 예측 | 말로 처방+알림 |
 | **모달리티** | 정형 센서 | + 이미지 | + 언어 |
@@ -102,10 +102,10 @@
 - **Phase 2 병진단:** PlantVillage(즉시) → AI Hub 071(국내) · ADR-005
 - **DL 프레임워크:** PyTorch (MPS) · **알림:** 디스코드 Webhook
 
-## ✅ 다음 액션 (Phase 3 LLM 시작)
+## ✅ Phase 3 LLM 완료
 - Phase 2 DL 완료: 4분류(서빙 resnet18 acc 0.96·백본 best mobilenet 0.976, MLflow)+설명(Grad-CAM)+검출(YOLO mAP@50 0.78)+강건화(부위 게이트 0.932)+다변량 시계열(LSTM MAE 1.18℃<baseline 1.25, 485개 다년) · 수행내역서 `phase2_dl.md` · 데모 smartfarm-ai.luma200ok.com
-1. 청크 3-1(LLM 기초·프롬프트)부터 → `src/llm/`
-2. CNN 진단 + LSTM 예측 + RAG 재배가이드 → 자연어 처방 통합 파이프라인
+- Phase 3 LLM 완료: 자연어 처방(`src/llm/prescribe.py`, function calling+환각 방어)+RAG(bge-m3, 농사로 4종)+일일 코치·조기 경보(`pipeline.py`)+자동 감시·디스코드 알림(`monitor.py`) · 수행내역서 `phase3_llm.md`
+- 다음 작업은 [STATUS.md](STATUS.md) 체크리스트 참조
 
 ---
 

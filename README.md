@@ -15,7 +15,7 @@
 📄 **수행내역서 (단계별 상세 보고서):**
 - [① Phase 1 · ML — 환경 → 작물 분류](docs/phase1_ml.md)
 - [② Phase 2 · DL — 잎 병해 진단 + 환경 시계열](docs/phase2_dl.md)
-- [③ Phase 3 · LLM — 자연어 처방 (예정)](docs/phase3_llm.md)
+- [③ Phase 3 · LLM — 자연어 처방](docs/phase3_llm.md)
 
 ---
 
